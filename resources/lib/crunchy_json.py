@@ -1079,6 +1079,8 @@ class CrunchyJSON(object):
 
         icon = xbmc.translatePath(self._addon.getAddonInfo('icon'))
 
+        ua = 'Mozilla/5.0 (X11; Linux i686; rv:5.0) Gecko/20100101 Firefox/5.0'
+
         if (self.userData['username'] != '' and
             self.userData['password'] != ''):
 
@@ -1094,7 +1096,7 @@ class CrunchyJSON(object):
                                      'password': self.userData['password']})
             opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
             opener.addheaders = [('Referer',    'https://www.crunchyroll.com'),
-                                 ('User-Agent', 'Mozilla/5.0 (X11; Linux i686; rv:5.0) Gecko/20100101 Firefox/5.0')]
+                                 ('User-Agent', ua)]
             urllib2.install_opener(opener)
             req = opener.open(url, data)
             req.close()
@@ -1110,7 +1112,7 @@ class CrunchyJSON(object):
                                  'formname': 'RpcApiUser_UpdateDefaultSoftSubLanguage'})
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
         opener.addheaders = [('Referer',    'https://www.crunchyroll.com/acct/?action=video'),
-                             ('User-Agent', 'Mozilla/5.0 (X11; Linux i686; rv:5.0) Gecko/20100101 Firefox/5.0')]
+                             ('User-Agent', ua)]
         self.opener = opener
         urllib2.install_opener(opener)
 
@@ -1141,8 +1143,10 @@ class CrunchyJSON(object):
                                  'entry_1130326797': __version__,
                                  'entry.590894822':  __XBMCBUILD__})
 
+        ua = 'Mozilla/5.0 (X11; Linux i686; rv:5.0) Gecko/20100101 Firefox/5.0'
+
         opener = urllib2.build_opener()
-        opener.addheaders = [('User-Agent', 'Mozilla/5.0 (X11; Linux i686; rv:5.0) Gecko/20100101 Firefox/5.0')]
+        opener.addheaders = [('User-Agent', ua)]
         urllib2.install_opener(opener)
 
         req = opener.open(url, data)
