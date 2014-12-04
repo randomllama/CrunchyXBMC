@@ -33,6 +33,7 @@ import cookielib
 
 import xbmc
 import xbmcgui
+import xbmcaddon
 
 import dateutil.tz
 import dateutil.parser
@@ -41,8 +42,6 @@ import dateutil.relativedelta
 import crunchy_main
 
 
-__settings__  = sys.modules["__main__"].__settings__
-lineupRegion  = __settings__.getSetting("lineupRegion")
 __version__   = sys.modules["__main__"].__version__
 __XBMCBUILD__ = xbmc.getInfoLabel("System.BuildVersion") + " " + sys.platform
 
@@ -57,13 +56,18 @@ class _Info(object):
 
 class CrunchyJSON(object):
 
-    def __init__(self, checkMode=True):
+    def __init__(self,
+                 checkMode=True,
+                 plugId='plugin.video.crunchyroll-takeout'):
+
+        self._addon = xbmcaddon.Addon(id=plugId)
+        self._plug  = (plugId, self._addon)
         self.loadShelf()
 
 
     def loadShelf(self):
         try:
-            self.base_path = xbmc.translatePath(__settings__.getAddonInfo('profile')).decode('utf-8')
+            self.base_path = xbmc.translatePath(self._addon.getAddonInfo('profile')).decode('utf-8')
             self.base_cache_path = os.path.join(self.base_path, "cache")
             if not os.path.exists(self.base_cache_path):
                 os.makedirs(self.base_cache_path)
@@ -71,13 +75,13 @@ class CrunchyJSON(object):
 
             # Load persistent vars
             userData     = shelve.open(shelf_path, writeback=True)
-            local_string = __settings__.getLocalizedString
+            local_string = self._addon.getLocalizedString
 
             notice_msg     = local_string(30200).encode("utf8")
             setup_msg      = local_string(30203).encode("utf8")
             acc_type_error = local_string(30312).encode("utf8")
 
-            change_language = __settings__.getSetting("change_language")
+            change_language = self._addon.getSetting("change_language")
 
             if change_language == "0":
                 userData.setdefault('API_LOCALE',"enUS")
@@ -100,8 +104,8 @@ class CrunchyJSON(object):
             elif change_language == "9":
                 userData['API_LOCALE']  = "esES"
 
-            userData['username'] = __settings__.getSetting("crunchy_username")
-            userData['password'] = __settings__.getSetting("crunchy_password")
+            userData['username'] = self._addon.getSetting("crunchy_username")
+            userData['password'] = self._addon.getSetting("crunchy_password")
 
             if not userData.has_key('device_id'):
                 char_set  = string.ascii_letters + string.digits
@@ -256,9 +260,9 @@ class CrunchyJSON(object):
                 self.userData = userData = None
                 userData.close()
 
-                crunchy_main.UI().addItem({'Title': acc_type_error,
-                                           'mode':  'Fail'})
-                crunchy_main.UI().endofdirectory('none')
+                crunchy_main.UI(plug=self._plug).addItem({'Title': acc_type_error,
+                                                          'mode':  'Fail'})
+                crunchy_main.UI(plug=self._plug).endofdirectory('none')
 
                 return False
 
@@ -331,9 +335,9 @@ class CrunchyJSON(object):
                         self.userData = userData = None
                         userData.close()
 
-                        crunchy_main.UI().addItem({'Title': acc_type_error,
-                                                   'mode':  'Fail'})
-                        crunchy_main.UI().endofdirectory('none')
+                        crunchy_main.UI(plug=self._plug).addItem({'Title': acc_type_error,
+                                                                  'mode':  'Fail'})
+                        crunchy_main.UI(plug=self._plug).endofdirectory('none')
 
                         return False
 
@@ -432,9 +436,9 @@ class CrunchyJSON(object):
                         self.userData = userData = None
                         userData.close()
 
-                        crunchy_main.UI().addItem({'Title': acc_type_error,
-                                                   'mode':  'Fail'})
-                        crunchy_main.UI().endofdirectory('none')
+                        crunchy_main.UI(plug=self._plug).addItem({'Title': acc_type_error,
+                                                                  'mode':  'Fail'})
+                        crunchy_main.UI(plug=self._plug).endofdirectory('none')
 
                         return False
 
@@ -509,25 +513,25 @@ class CrunchyJSON(object):
                     'name' in series and
                     series['media_count'] > 0):
 
-                    crunchy_main.UI().addItem({'Title':       series['name'].encode("utf8"),
-                                               'mode':        'list_coll',
-                                               'series_id':    series['series_id'],
-                                               'count':        str(series['media_count']),
-                                               'Thumb':        thumb,
-                                               'Fanart_Image': art,
-                                               'plot':         description,
-                                               'year':         year},
-                                               True)
+                    crunchy_main.UI(plug=self._plug).addItem({'Title':       series['name'].encode("utf8"),
+                                                              'mode':        'list_coll',
+                                                              'series_id':    series['series_id'],
+                                                              'count':        str(series['media_count']),
+                                                              'Thumb':        thumb,
+                                                              'Fanart_Image': art,
+                                                              'plot':         description,
+                                                              'year':         year},
+                                                              True)
 
             if counter >= 64:
                 offset = int(offset) + counter
-                crunchy_main.UI().addItem({'Title':    '...load more',
-                                           'mode':     'list_series',
-                                           'showtype': media_type,
-                                           'filterx':  filterx,
-                                           'offset':   str(offset)})
+                crunchy_main.UI(plug=self._plug).addItem({'Title':    '...load more',
+                                                          'mode':     'list_series',
+                                                          'showtype': media_type,
+                                                          'filterx':  filterx,
+                                                          'offset':   str(offset)})
 
-        crunchy_main.UI().endofdirectory('none')
+        crunchy_main.UI(plug=self._plug).endofdirectory('none')
 
 
     def list_categories(self, title, media_type, filterx):
@@ -538,22 +542,22 @@ class CrunchyJSON(object):
             if filterx == 'genre':
                 if 'genre' in request['data']:
                     for genre in request['data']['genre']:
-                        crunchy_main.UI().addItem({'Title':    genre['label'].encode("utf8"),
-                                                   'mode':     'list_series',
-                                                   'showtype': media_type,
-                                                   'filterx':  'tag:' + genre['tag']},
-                                                   True)
+                        crunchy_main.UI(plug=self._plug).addItem({'Title':    genre['label'].encode("utf8"),
+                                                                  'mode':     'list_series',
+                                                                  'showtype': media_type,
+                                                                  'filterx':  'tag:' + genre['tag']},
+                                                                  True)
 
             if filterx == 'season':
                 if 'season' in request['data']:
                     for season in request['data']['season']:
-                        crunchy_main.UI().addItem({'Title':    season['label'].encode("utf8"),
-                                                   'mode':     'list_series',
-                                                   'showtype': media_type,
-                                                   'filterx':  'tag:' + season['tag']},
-                                                   True)
+                        crunchy_main.UI(plug=self._plug).addItem({'Title':    season['label'].encode("utf8"),
+                                                                  'mode':     'list_series',
+                                                                  'showtype': media_type,
+                                                                  'filterx':  'tag:' + season['tag']},
+                                                                  True)
 
-        crunchy_main.UI().endofdirectory('none')
+        crunchy_main.UI(plug=self._plug).endofdirectory('none')
 
 
     def list_collections(self, series_id, series_name, count, thumb, fanart):
@@ -582,20 +586,20 @@ class CrunchyJSON(object):
             else:
                 for collection in request['data']:
                     complete = '1' if collection['complete'] else '0'
-                    crunchy_main.UI().addItem({'Title':        collection['name'].encode("utf8"),
-                                               'filterx':      series_name,
-                                               'mode':         'list_media',
-                                               'count':        str(count),
-                                               'id':           collection['collection_id'],
-                                               'plot':         collection['description'].encode("utf8"),
-                                               'complete':     complete,
-                                               'season':       str(collection['season']),
-                                               'series_id':    series_id,
-                                               'Thumb':        thumb,
-                                               'Fanart_Image': fanart},
-                                               True)
+                    crunchy_main.UI(plug=self._plug).addItem({'Title':        collection['name'].encode("utf8"),
+                                                              'filterx':      series_name,
+                                                              'mode':         'list_media',
+                                                              'count':        str(count),
+                                                              'id':           collection['collection_id'],
+                                                              'plot':         collection['description'].encode("utf8"),
+                                                              'complete':     complete,
+                                                              'season':       str(collection['season']),
+                                                              'series_id':    series_id,
+                                                              'Thumb':        thumb,
+                                                              'Fanart_Image': fanart},
+                                                              True)
 
-        crunchy_main.UI().endofdirectory('none')
+        crunchy_main.UI(plug=self._plug).endofdirectory('none')
 
 
     def list_media(self, collection_id, series_name, count, complete, season, fanart):
@@ -703,19 +707,19 @@ class CrunchyJSON(object):
             url = media['url']
             media_id = url.split('-')[-1]
 
-            crunchy_main.UI().addItem({'Title':        name.encode("utf8"),
-                                       'mode':         'videoplay',
-                                       'id':           media_id.encode("utf8"),
-                                       'Thumb':        thumb.encode("utf8"),
-                                       'url':          url.encode("utf8"),
-                                       'Fanart_Image': fanart,
-                                       'plot':         description,
-                                       'year':         year,
-                                       'playhead':     playhead,
-                                       'duration':     duration},
-                                       False)
+            crunchy_main.UI(plug=self._plug).addItem({'Title':        name.encode("utf8"),
+                                                      'mode':         'videoplay',
+                                                      'id':           media_id.encode("utf8"),
+                                                      'Thumb':        thumb.encode("utf8"),
+                                                      'url':          url.encode("utf8"),
+                                                      'Fanart_Image': fanart,
+                                                      'plot':         description,
+                                                      'year':         year,
+                                                      'playhead':     playhead,
+                                                      'duration':     duration},
+                                                      False)
 
-        crunchy_main.UI().endofdirectory('none')
+        crunchy_main.UI(plug=self._plug).endofdirectory('none')
 
 
     def History(self):
@@ -748,7 +752,7 @@ class CrunchyJSON(object):
 
 
     def Queue(self):
-        queue_type = __settings__.getSetting("queue_type")
+        queue_type = self._addon.getSetting("queue_type")
 
         if queue_type == '0':
             fields  = "".join(["media.episode_number,",
@@ -813,16 +817,16 @@ class CrunchyJSON(object):
                         'series_id' in series and
                         'name' in series and
                         series['media_count'] > 0):
-                        crunchy_main.UI().addItem({'Title':        series['name'].encode("utf8"),
-                                                   'mode':         'list_coll',
-                                                   'series_id':    series['series_id'],
-                                                   'Thumb':        thumb,
-                                                   'Fanart_Image': art,
-                                                   'plot':         description,
-                                                   'year':         year},
-                                                   True)
+                        crunchy_main.UI(plug=self._plug).addItem({'Title':        series['name'].encode("utf8"),
+                                                                  'mode':         'list_coll',
+                                                                  'series_id':    series['series_id'],
+                                                                  'Thumb':        thumb,
+                                                                  'Fanart_Image': art,
+                                                                  'plot':         description,
+                                                                  'year':         year},
+                                                                  True)
 
-                crunchy_main.UI().endofdirectory('none')
+                crunchy_main.UI(plug=self._plug).endofdirectory('none')
 
 
     def startPlayback(self, Title, url, media_id, playhead, duration, Thumb):
@@ -830,9 +834,9 @@ class CrunchyJSON(object):
         # Split the URL to get the session_id & quality
         session_id  = self.userData['session_id']
         res_quality = ['low', 'mid', 'high', 'ultra']
-        quality     = res_quality[int(__settings__.getSetting("video_quality"))]
+        quality     = res_quality[int(self._addon.getSetting("video_quality"))]
 
-        if __settings__.getSetting("playback_resume") == 'true':
+        if self._addon.getSetting("playback_resume") == 'true':
             playback_resume = True
         else:
             playback_resume = False
@@ -844,7 +848,7 @@ class CrunchyJSON(object):
 
         totaltime = duration
 
-        local_string = __settings__.getLocalizedString
+        local_string = self._addon.getLocalizedString
 
         notice_msg = local_string(30200).encode("utf8")
         setup_msg  = local_string(30212).encode("utf8")
@@ -984,14 +988,14 @@ class CrunchyJSON(object):
 
     def changeLocale(self):
         cj           = cookielib.LWPCookieJar()
-        local_string = __settings__.getLocalizedString
+        local_string = self._addon.getLocalizedString
 
         notice      = local_string(30200).encode("utf8")
         notice_msg  = local_string(30211).encode("utf8")
         notice_err  = local_string(30206).encode("utf8")
         notice_done = local_string(30310).encode("utf8")
 
-        icon = xbmc.translatePath(__settings__.getAddonInfo('icon'))
+        icon = xbmc.translatePath(self._addon.getAddonInfo('icon'))
 
         if (self.userData['username'] != '' and
             self.userData['password'] != ''):
@@ -1041,7 +1045,7 @@ class CrunchyJSON(object):
                             + notice_done + ',5000,' + icon + ')')
         xbmc.log("Crunchyroll.language: --> Disabling the force change language setting.")
 
-        __settings__.setSetting(id="change_language", value="0")
+        self._addon.setSetting(id="change_language", value="0")
 
 
     def usage_reporting(self):

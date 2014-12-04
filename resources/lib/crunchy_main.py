@@ -21,14 +21,12 @@ import urllib
 
 import xbmc
 import xbmcgui
+import xbmcaddon
 import xbmcplugin
+
 import crunchy_json
 
 
-__settings__ = sys.modules["__main__"].__settings__
-
-
-###############################################################################
 
 class updateArgs(object):
 
@@ -44,8 +42,10 @@ class updateArgs(object):
 
 class UI(object):
 
-    def __init__(self):
-        self.main = Main(checkMode = False)
+    def __init__(self, plug=('plugin.video.crunchyroll-takeout', None)):
+        self.main    = Main(checkMode=False, plugId=plug[0])
+        self._plugId = plug[0]
+        self._addon  = plug[1]
         xbmcplugin.setContent(int(sys.argv[1]), 'movies')
 
 
@@ -74,7 +74,7 @@ class UI(object):
         info.setdefault('url','None')
         info.setdefault('Thumb','None')
         info.setdefault('Fanart_Image',
-                        xbmc.translatePath(__settings__.getAddonInfo('fanart')))
+                        xbmc.translatePath(self._addon.getAddonInfo('fanart')))
         info.setdefault('mode','None')
         info.setdefault('count','0')
         info.setdefault('filterx','None')
@@ -141,15 +141,15 @@ class UI(object):
 
 
     def showMain(self):
-        local_string    = __settings__.getLocalizedString
-        change_language = __settings__.getSetting("change_language")
+        local_string    = self._addon.getLocalizedString
+        change_language = self._addon.getSetting("change_language")
 
-        if crunchy_json.CrunchyJSON().loadShelf() is False:
+        if crunchy_json.CrunchyJSON(plugId=self._plugId) is False:
             self.addItem({'Title': 'Session Failed: Check Login'})
             self.endofdirectory()
         else:
             if change_language != "0":
-                crunchy_json.CrunchyJSON().changeLocale()
+                crunchy_json.CrunchyJSON(plugId=self._plugId).changeLocale()
 
             Anime   = local_string(30100).encode("utf8")
             Drama   = local_string(30104).encode("utf8")
@@ -170,7 +170,7 @@ class UI(object):
 
 
     def channels(self):
-        local_string    = __settings__.getLocalizedString
+        local_string    = self._addon.getLocalizedString
 
         popular         = local_string(30103).encode("utf8")
         Simulcasts      = local_string(30106).encode("utf8")
@@ -215,54 +215,54 @@ class UI(object):
 
 
     def json_list_series(self):
-        crunchy_json.CrunchyJSON().list_series(self.main.args.name,
-                                               self.main.args.showtype,
-                                               self.main.args.filterx,
-                                               self.main.args.offset)
+        crunchy_json.CrunchyJSON(plugId=self._plugId).list_series(self.main.args.name,
+                                                                  self.main.args.showtype,
+                                                                  self.main.args.filterx,
+                                                                  self.main.args.offset)
 
 
     def json_list_cat(self):
-        crunchy_json.CrunchyJSON().list_categories(self.main.args.name,
-                                                   self.main.args.showtype,
-                                                   self.main.args.filterx)
+        crunchy_json.CrunchyJSON(plugId=self._plugId).list_categories(self.main.args.name,
+                                                                      self.main.args.showtype,
+                                                                      self.main.args.filterx)
 
 
     def json_list_collection(self):
-        crunchy_json.CrunchyJSON().list_collections(self.main.args.series_id,
-                                                    self.main.args.name,
-                                                    self.main.args.count,
-                                                    self.main.args.icon,
-                                                    self.main.args.fanart)
+        crunchy_json.CrunchyJSON(plugId=self._plugId).list_collections(self.main.args.series_id,
+                                                                       self.main.args.name,
+                                                                       self.main.args.count,
+                                                                       self.main.args.icon,
+                                                                       self.main.args.fanart)
 
 
     def json_list_media(self):
-        crunchy_json.CrunchyJSON().list_media(self.main.args.id,
-                                              self.main.args.filterx,
-                                              self.main.args.count,
-                                              self.main.args.complete,
-                                              self.main.args.season,
-                                              self.main.args.fanart)
+        crunchy_json.CrunchyJSON(plugId=self._plugId).list_media(self.main.args.id,
+                                                                 self.main.args.filterx,
+                                                                 self.main.args.count,
+                                                                 self.main.args.complete,
+                                                                 self.main.args.season,
+                                                                 self.main.args.fanart)
 
 
     def json_History(self):
-        crunchy_json.CrunchyJSON().History()
+        crunchy_json.CrunchyJSON(plugId=self._plugId).History()
 
 
     def queue(self):
-        crunchy_json.CrunchyJSON().Queue()
+        crunchy_json.CrunchyJSON(plugId=self._plugId).Queue()
 
 
     def startVideo(self):
-        crunchy_json.CrunchyJSON().startPlayback(self.main.args.name,
-                                                 self.main.args.url,
-                                                 self.main.args.id,
-                                                 self.main.args.playhead,
-                                                 self.main.args.duration,
-                                                 self.main.args.icon)
+        crunchy_json.CrunchyJSON(plugId=self._plugId).startPlayback(self.main.args.name,
+                                                                    self.main.args.url,
+                                                                    self.main.args.id,
+                                                                    self.main.args.playhead,
+                                                                    self.main.args.duration,
+                                                                    self.main.args.icon)
 
 
     def Fail(self):
-        local_string = __settings__.getLocalizedString
+        local_string = self._addon.getLocalizedString
 
         badstuff = local_string(30207).encode("utf8")
 
@@ -277,8 +277,13 @@ class UI(object):
 
 class Main(object):
 
-    def __init__(self, checkMode=True):
-        crunchy_json.CrunchyJSON().loadShelf()
+    def __init__(self,
+                 checkMode=True,
+                 plugId='plugin.video.crunchyroll-takeout'):
+
+        self._plugId = plugId
+        crunchy_json.CrunchyJSON(plugId=plugId)
+
         self.parseArgs()
         if checkMode:
             self.checkMode()
@@ -301,23 +306,24 @@ class Main(object):
 
     def checkMode(self):
         mode = self.args.mode
+        plug = (self._plugId, xbmcaddon.Addon(id=self._plugId))
         if mode is None:
-            UI().showMain()
+            UI(plug=plug).showMain()
         elif mode == 'Channels':
-            UI().channels()
+            UI(plug=plug).channels()
         elif mode == 'list_series':
-            UI().json_list_series()
+            UI(plug=plug).json_list_series()
         elif mode == 'list_categories':
-            UI().json_list_cat()
+            UI(plug=plug).json_list_cat()
         elif mode == 'list_coll':
-            UI().json_list_collection()
+            UI(plug=plug).json_list_collection()
         elif mode == 'list_media':
-            UI().json_list_media()
+            UI(plug=plug).json_list_media()
         elif mode == 'History':
-            UI().json_History()
+            UI(plug=plug).json_History()
         elif mode == 'queue':
-            UI().queue()
+            UI(plug=plug).queue()
         elif mode == 'videoplay':
-            UI().startVideo()
+            UI(plug=plug).startVideo()
         else:
-            UI().Fail()
+            UI(plug=plug).Fail()

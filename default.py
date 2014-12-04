@@ -19,17 +19,18 @@ import sys
 import xbmcaddon
 
 
+_plugId = 'plugin.video.crunchyroll-takeout'
+
 # Plugin constants
 __plugin__    = "Crunchyrollxbmc"
 __version__   = "2.1.0"
 __XBMCBUILD__ = xbmc.getInfoLabel("System.BuildVersion")
-__settings__  = xbmcaddon.Addon(id='plugin.video.crunchyroll-takeout')
-__language__  = __settings__.getLocalizedString
+__language__  = xbmcaddon.Addon(id=_plugId).getLocalizedString
 
 xbmc.log("[PLUGIN] '%s: version %s' initialized!" % (__plugin__, __version__))
 
 if __name__ == "__main__":
     from resources.lib import crunchy_main
-    crunchy_main.Main()
+    crunchy_main.Main(plugId=_plugId)
 
 sys.modules.clear()
