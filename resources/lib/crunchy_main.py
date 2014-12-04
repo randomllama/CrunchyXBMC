@@ -50,7 +50,7 @@ class UI(object):
 
 
     def endofdirectory(self, sortMethod='none'):
-        # set sortmethod to something xbmc can use
+        # Set sortmethod to something xbmc can use
         if sortMethod == 'title':
             sortMethod = xbmcplugin.SORT_METHOD_LABEL
         elif sortMethod == 'none':
@@ -58,11 +58,11 @@ class UI(object):
         elif sortMethod == 'date':
             sortMethod = xbmcplugin.SORT_METHOD_DATE
 
-        #Sort methods are required in library mode.
+        # Sort methods are required in library mode
         xbmcplugin.addSortMethod(int(sys.argv[1]),
                                  sortMethod)
 
-        #let xbmc know the script is done adding items to the list.
+        # Let xbmc know the script is done adding items to the list
         dontAddToHierarchy = False
         xbmcplugin.endOfDirectory(handle        = int(sys.argv[1]),
                                   updateListing = dontAddToHierarchy)
@@ -92,7 +92,7 @@ class UI(object):
         info.setdefault('duration','0')
         info.setdefault('plot','None')
 
-        #create params for xbmcplugin module
+        # Create params for xbmcplugin module
         u = sys.argv[0]+\
             '?url='+urllib.quote_plus(info['url'])+\
             '&mode='+urllib.quote_plus(info['mode'])+\
@@ -112,7 +112,7 @@ class UI(object):
             '&duration='+urllib.quote_plus(info['duration'])+\
             '&plot='+urllib.quote_plus(info['plot']+'%20')
 
-        #create list item
+        # Create list item
         li=xbmcgui.ListItem(label          = info['Title'],
                             thumbnailImage = info['Thumb'])
         li.setInfo(type       = "Video",
@@ -121,18 +121,18 @@ class UI(object):
                                  "Year":  info['year']})
         li.setProperty("Fanart_Image", info['Fanart_Image'])
 
-        #for videos, replace context menu with queue and add to favorites
+        # For videos, replace context menu with queue and add to favorites
         if not isFolder:
             #li.setProperty("IsPlayable", "true")
-            #let xbmc know this can be played, unlike a folder.
-            #add context menu items to non-folder items.
+            # Let xbmc know this can be played, unlike a folder.
+            # Add context menu items to non-folder items.
             contextmenu = [('Queue Video', 'Action(Queue)')]
             li.addContextMenuItems( contextmenu )
-        #for folders, completely remove contextmenu, as it is totally useless.
+        # For folders, completely remove contextmenu, as it is totally useless
         else:
             li.addContextMenuItems([], replaceItems=True)
 
-        #add item to list
+        # Add item to list
         xbmcplugin.addDirectoryItem(handle     = int(sys.argv[1]),
                                     url        = u,
                                     listitem   = li,
@@ -293,7 +293,7 @@ class Main(object):
             # updateArgs will turn the 'None' into None.
             # Don't simply define it as None because unquote_plus in updateArgs
             # will throw an exception.
-            # This is a pretty ugly solution
+            # This is a pretty ugly solution.
             self.args = updateArgs(mode = 'None',
                                    url  = 'None',
                                    name = 'None')
