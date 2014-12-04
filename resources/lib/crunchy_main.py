@@ -287,7 +287,8 @@ class Main(object):
     def parseArgs(self):
         # Call updateArgs() with our formatted argv to create self.args object
         if (sys.argv[2]):
-            exec "self.args = updateArgs(%s')" % (sys.argv[2][1:].replace('&', "',").replace('=', "='"))
+            exec("self.args = updateArgs(%s')"
+                 % (sys.argv[2][1:].replace('&', "',").replace('=', "='")))
         else:
             # updateArgs will turn the 'None' into None.
             # Don't simply define it as None because unquote_plus in updateArgs
