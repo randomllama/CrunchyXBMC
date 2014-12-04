@@ -107,7 +107,7 @@ class CrunchyJSON(object):
             userData['username'] = self._addon.getSetting("crunchy_username")
             userData['password'] = self._addon.getSetting("crunchy_password")
 
-            if not userData.has_key('device_id'):
+            if 'device_id' not in userData:
                 char_set  = string.ascii_letters + string.digits
                 device_id = ''.join(random.sample(char_set, 32))
                 userData["device_id"] = device_id
@@ -147,8 +147,8 @@ class CrunchyJSON(object):
 
         # Check to see if a session_id doesn't exist or if the current
         # auth token is invalid and if so start a new session and log it in
-        if ((not userData.has_key('session_id')) or
-            (not userData.has_key('auth_expires')) or
+        if (('session_id' not in userData) or
+            ('auth_expires' not in userData) or
             current_datetime > userData['auth_expires']):
 
             # Start new session
@@ -270,8 +270,8 @@ class CrunchyJSON(object):
 
         # Check to see if a valid session and auth token exist and if so
         # reinitialize a new session using the auth token
-        elif (userData.has_key("session_id") and
-              userData.has_key("auth_expires") and
+        elif ('session_id' in userData and
+              'auth_expires' in userData and
               current_datetime < userData['auth_expires'] and
               current_datetime > userData['session_expires']):
 
@@ -377,7 +377,7 @@ class CrunchyJSON(object):
 
         # If we got to this point that means a session exists and it's still
         # valid, we don't need to do anything
-        elif (userData.has_key("session_id") and
+        elif ('session_id' in userData and
               current_datetime < userData['session_expires']):
 
             # This section below is stupid slow
