@@ -48,14 +48,14 @@ __XBMCBUILD__ = xbmc.getInfoLabel("System.BuildVersion") + " " + sys.platform
 
 
 
-class _Info:
+class _Info(object):
 
     def __init__(self, *args, **kwargs ):
         self.__dict__.update( kwargs )
 
 
 
-class CrunchyJSON:
+class CrunchyJSON(object):
 
     def __init__(self, checkMode=True):
         self.loadShelf()
