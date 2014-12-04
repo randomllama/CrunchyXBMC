@@ -50,8 +50,8 @@ __XBMCBUILD__ = xbmc.getInfoLabel("System.BuildVersion") + " " + sys.platform
 
 class _Info(object):
 
-    def __init__(self, *args, **kwargs ):
-        self.__dict__.update( kwargs )
+    def __init__(self, *args, **kwargs):
+        self.__dict__.update(kwargs)
 
 
 
@@ -70,7 +70,7 @@ class CrunchyJSON(object):
             shelf_path = os.path.join(self.base_path, "cruchyXBMC")
 
             # Load persistent vars
-            userData     = shelve.open(shelf_path,writeback=True)
+            userData     = shelve.open(shelf_path, writeback=True)
             local_string = __settings__.getLocalizedString
 
             notice_msg     = local_string(30200).encode("utf8")
@@ -105,16 +105,16 @@ class CrunchyJSON(object):
 
             if not userData.has_key('device_id'):
                 char_set  = string.ascii_letters + string.digits
-                device_id = ''.join(random.sample(char_set,32))
+                device_id = ''.join(random.sample(char_set, 32))
                 userData["device_id"] = device_id
                 xbmc.log("Crunchyroll;xbmc ----> New device_id created."
                          + " New device_id is: " + str(device_id))
 
-            userData['API_HEADERS'] = [('User-Agent',"Mozilla/5.0 (PLAYSTATION 3; 4.46)"),
-                                       ('Host',"api.crunchyroll.com"),
-                                       ('Accept-Encoding',"gzip, deflate"),
-                                       ('Accept',"*/*"),
-                                       ('Content-Type',"application/x-www-form-urlencoded")]
+            userData['API_HEADERS'] = [('User-Agent',      "Mozilla/5.0 (PLAYSTATION 3; 4.46)"),
+                                       ('Host',            "api.crunchyroll.com"),
+                                       ('Accept-Encoding', "gzip, deflate"),
+                                       ('Accept',          "*/*"),
+                                       ('Content-Type',    "application/x-www-form-urlencoded")]
 
             userData['API_URL']          = "https://api.crunchyroll.com"
             userData['API_VERSION']      = "1.0.1"
@@ -123,18 +123,18 @@ class CrunchyJSON(object):
 
             userData.setdefault('premium_type', 'UNKNOWN')
             current_datetime = datetime.datetime.now(dateutil.tz.tzutc())
-            userData.setdefault('lastreported', (current_datetime - dateutil.relativedelta.relativedelta( hours = +24 )))
+            userData.setdefault('lastreported', (current_datetime - dateutil.relativedelta.relativedelta(hours = +24)))
             self.userData = userData
 
         except:
             xbmc.log("Unexpected error:", sys.exc_info())
 
             userData['session_id']      = ''
-            userData['auth_expires']    = current_datetime - dateutil.relativedelta.relativedelta( hours = +24 )
-            userData['lastreported']    = current_datetime - dateutil.relativedelta.relativedelta( hours = +24 )
+            userData['auth_expires']    = current_datetime - dateutil.relativedelta.relativedelta(hours = +24)
+            userData['lastreported']    = current_datetime - dateutil.relativedelta.relativedelta(hours = +24)
             userData['premium_type']    = 'UNKNOWN'
             userData['auth_token']      = ''
-            userData['session_expires'] = current_datetime - dateutil.relativedelta.relativedelta( hours = +24 )
+            userData['session_expires'] = current_datetime - dateutil.relativedelta.relativedelta(hours = +24)
 
             self.userData = userData
             userData.close()
@@ -200,8 +200,12 @@ class CrunchyJSON(object):
 
                 opener = urllib2.build_opener()
                 opener.addheaders = userData['API_HEADERS']
-                options = urllib.urlencode({'session_id':userData['session_id'], 'password':userData['password'], 'account':userData['username'], 'version':userData['API_VERSION'], 'locale': userData['API_LOCALE']})
-                url = userData['API_URL']+"/login.0.json"
+                options = urllib.urlencode({'session_id': userData['session_id'],
+                                            'password':   userData['password'],
+                                            'account':    userData['username'],
+                                            'version':    userData['API_VERSION'],
+                                            'locale':     userData['API_LOCALE']})
+                url = userData['API_URL'] + "/login.0.json"
                 req = opener.open(url, options)
                 json_data = req.read()
 
@@ -269,7 +273,7 @@ class CrunchyJSON(object):
             xbmc.log("Crunchyroll.bundle ----> Valid auth token was detected."
                      + " Restarting session.")
 
-            opener = urllib2.build_opener()
+            opener  = urllib2.build_opener()
             options = urllib.urlencode({'device_id':    userData["device_id"],
                                         'device_type':  userData['API_DEVICE_TYPE'],
                                         'access_token': userData['API_ACCESS_TOKEN'],
@@ -875,9 +879,9 @@ class CrunchyJSON(object):
         request = json.loads(json_data)
 
         if int(resumetime) > 0:
-            playcount=0
+            playcount = 0
         else:
-            playcount=1
+            playcount = 1
 
         item = xbmcgui.ListItem(Title)
         item.setInfo(type="Video", infoLabels={"Title":     Title,
@@ -894,6 +898,7 @@ class CrunchyJSON(object):
             if request['data']['stream_data'] is not None:
                 for stream in request['data']['stream_data']['streams']:
                     allurl[stream['quality']] = stream['url']
+
                 if allurl[quality] is not None:
                     url = allurl[quality]
                 elif quality == 'ultra' and allurl['high'] is not None:
@@ -921,8 +926,8 @@ class CrunchyJSON(object):
                 try:
                     while player.isPlaying:
                         temptimeplayed = xbmc.Player().getTime()
-                        timeplayed = temptimeplayed
-                        if x ==30:
+                        timeplayed     = temptimeplayed
+                        if x == 30:
                             x = 0
                             strTimePlayed = str(int(round(timeplayed)))
                             values = {'session_id': session_id,
@@ -936,7 +941,7 @@ class CrunchyJSON(object):
                             x = x + 1
                         time.sleep(1)
                 except:
-                    xbmc.log( "XBMC stopped playing")
+                    xbmc.log("XBMC stopped playing")
 
                 strTimePlayed = str(int(round(timeplayed)))
                 values        = {'session_id': session_id,
