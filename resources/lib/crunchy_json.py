@@ -37,7 +37,7 @@ import xbmcaddon
 
 import dateutil.tz
 import dateutil.parser
-import dateutil.relativedelta
+import dateutil.relativedelta as durel
 
 import crunchy_main as crm
 
@@ -127,18 +127,18 @@ class CrunchyJSON(object):
 
             userData.setdefault('premium_type', 'UNKNOWN')
             current_datetime = datetime.datetime.now(dateutil.tz.tzutc())
-            userData.setdefault('lastreported', (current_datetime - dateutil.relativedelta.relativedelta(hours = +24)))
+            userData.setdefault('lastreported', (current_datetime - durel.relativedelta(hours = +24)))
             self.userData = userData
 
         except:
             xbmc.log("Unexpected error:", sys.exc_info())
 
             userData['session_id']      = ''
-            userData['auth_expires']    = current_datetime - dateutil.relativedelta.relativedelta(hours = +24)
-            userData['lastreported']    = current_datetime - dateutil.relativedelta.relativedelta(hours = +24)
+            userData['auth_expires']    = current_datetime - durel.relativedelta(hours = +24)
+            userData['lastreported']    = current_datetime - durel.relativedelta(hours = +24)
             userData['premium_type']    = 'UNKNOWN'
             userData['auth_token']      = ''
-            userData['session_expires'] = current_datetime - dateutil.relativedelta.relativedelta(hours = +24)
+            userData['session_expires'] = current_datetime - durel.relativedelta(hours = +24)
 
             self.userData = userData
             userData.close()
@@ -175,7 +175,7 @@ class CrunchyJSON(object):
             if request['error'] is False:
                 userData['session_id']      = request['data']['session_id']
                 userData['session_expires'] = (current_datetime +
-                                               dateutil.relativedelta.relativedelta(hours = +4))
+                                               durel.relativedelta(hours = +4))
                 userData['test_session']    = current_datetime
 
                 xbmc.log("Crunchyroll.bundle ----> New session created!"
@@ -239,7 +239,7 @@ class CrunchyJSON(object):
             # Call for usage reporting
             if current_datetime > userData['lastreported']:
                 userData['lastreported'] = (current_datetime +
-                                            dateutil.relativedelta.relativedelta(hours = +24))
+                                            durel.relativedelta(hours = +24))
                 self.userData = userData
                 self.usage_reporting()
 
@@ -304,7 +304,7 @@ class CrunchyJSON(object):
                     userData['auth_token']      = request['data']['auth']
                     # 4 hours is a guess. Might be +/- 4.
                     userData['session_expires'] = (current_datetime +
-                                                   dateutil.relativedelta.relativedelta(hours = +4))
+                                                   durel.relativedelta(hours = +4))
                     userData['test_session']    = current_datetime
 
                     xbmc.log("Crunchyroll.bundle ----> Session restart"
@@ -314,7 +314,7 @@ class CrunchyJSON(object):
                     # Call for usage reporting
                     if current_datetime > userData['lastreported']:
                         userData['lastreported'] = (current_datetime +
-                                                    dateutil.relativedelta.relativedelta(hours = +24))
+                                                    durel.relativedelta(hours = +24))
                         self.userData = userData
                         self.usage_reporting()
 
@@ -359,10 +359,10 @@ class CrunchyJSON(object):
 
             except:
                 userData['session_id']      = ''
-                userData['auth_expires']    = current_datetime - dateutil.relativedelta.relativedelta(hours = +24)
+                userData['auth_expires']    = current_datetime - durel.relativedelta(hours = +24)
                 userData['premium_type']    = 'unknown'
                 userData['auth_token']      = ''
-                userData['session_expires'] = current_datetime - dateutil.relativedelta.relativedelta(hours = +24)
+                userData['session_expires'] = current_datetime - durel.relativedelta(hours = +24)
 
                 xbmc.log("Crunchyroll.bundle ----> Error restarting session."
                          + " Error message was: " + str(request['message']))
@@ -383,7 +383,7 @@ class CrunchyJSON(object):
 
                 # Test once every 10 min
                 userData['test_session'] = (current_datetime +
-                                            dateutil.relativedelta.relativedelta(minutes = +10))
+                                            durel.relativedelta(minutes = +10))
 
                 # Test to make sure the session still works
                 # (sometimes sessions just stop working)
@@ -415,7 +415,7 @@ class CrunchyJSON(object):
                     # Call for usage reporting
                     if current_datetime > userData['lastreported']:
                         userData['lastreported'] = (current_datetime +
-                                                    dateutil.relativedelta.relativedelta(hours = +24))
+                                                    durel.relativedelta(hours = +24))
                         self.userData = userData
                         self.usage_reporting()
 
