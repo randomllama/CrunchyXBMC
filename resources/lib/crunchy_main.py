@@ -24,7 +24,7 @@ import xbmcgui
 import xbmcaddon
 import xbmcplugin
 
-import crunchy_json
+import crunchy_json as crj
 
 
 
@@ -144,12 +144,12 @@ class UI(object):
         local_string    = self._addon.getLocalizedString
         change_language = self._addon.getSetting("change_language")
 
-        if crunchy_json.CrunchyJSON(plugId=self._plugId) is False:
+        if crj.CrunchyJSON(plugId=self._plugId) is False:
             self.addItem({'Title': 'Session Failed: Check Login'})
             self.endofdirectory()
         else:
             if change_language != "0":
-                crunchy_json.CrunchyJSON(plugId=self._plugId).changeLocale()
+                crj.CrunchyJSON(plugId=self._plugId).changeLocale()
 
             Anime   = local_string(30100).encode("utf8")
             Drama   = local_string(30104).encode("utf8")
@@ -215,50 +215,50 @@ class UI(object):
 
 
     def json_list_series(self):
-        crunchy_json.CrunchyJSON(plugId=self._plugId).list_series(self.main.args.name,
-                                                                  self.main.args.showtype,
-                                                                  self.main.args.filterx,
-                                                                  self.main.args.offset)
+        crj.CrunchyJSON(plugId=self._plugId).list_series(self.main.args.name,
+                                                         self.main.args.showtype,
+                                                         self.main.args.filterx,
+                                                         self.main.args.offset)
 
 
     def json_list_cat(self):
-        crunchy_json.CrunchyJSON(plugId=self._plugId).list_categories(self.main.args.name,
-                                                                      self.main.args.showtype,
-                                                                      self.main.args.filterx)
+        crj.CrunchyJSON(plugId=self._plugId).list_categories(self.main.args.name,
+                                                             self.main.args.showtype,
+                                                             self.main.args.filterx)
 
 
     def json_list_collection(self):
-        crunchy_json.CrunchyJSON(plugId=self._plugId).list_collections(self.main.args.series_id,
-                                                                       self.main.args.name,
-                                                                       self.main.args.count,
-                                                                       self.main.args.icon,
-                                                                       self.main.args.fanart)
+        crj.CrunchyJSON(plugId=self._plugId).list_collections(self.main.args.series_id,
+                                                              self.main.args.name,
+                                                              self.main.args.count,
+                                                              self.main.args.icon,
+                                                              self.main.args.fanart)
 
 
     def json_list_media(self):
-        crunchy_json.CrunchyJSON(plugId=self._plugId).list_media(self.main.args.id,
-                                                                 self.main.args.filterx,
-                                                                 self.main.args.count,
-                                                                 self.main.args.complete,
-                                                                 self.main.args.season,
-                                                                 self.main.args.fanart)
+        crj.CrunchyJSON(plugId=self._plugId).list_media(self.main.args.id,
+                                                        self.main.args.filterx,
+                                                        self.main.args.count,
+                                                        self.main.args.complete,
+                                                        self.main.args.season,
+                                                        self.main.args.fanart)
 
 
     def json_History(self):
-        crunchy_json.CrunchyJSON(plugId=self._plugId).History()
+        crj.CrunchyJSON(plugId=self._plugId).History()
 
 
     def queue(self):
-        crunchy_json.CrunchyJSON(plugId=self._plugId).Queue()
+        crj.CrunchyJSON(plugId=self._plugId).Queue()
 
 
     def startVideo(self):
-        crunchy_json.CrunchyJSON(plugId=self._plugId).startPlayback(self.main.args.name,
-                                                                    self.main.args.url,
-                                                                    self.main.args.id,
-                                                                    self.main.args.playhead,
-                                                                    self.main.args.duration,
-                                                                    self.main.args.icon)
+        crj.CrunchyJSON(plugId=self._plugId).startPlayback(self.main.args.name,
+                                                           self.main.args.url,
+                                                           self.main.args.id,
+                                                           self.main.args.playhead,
+                                                           self.main.args.duration,
+                                                           self.main.args.icon)
 
 
     def Fail(self):
@@ -282,7 +282,7 @@ class Main(object):
                  plugId='plugin.video.crunchyroll-takeout'):
 
         self._plugId = plugId
-        crunchy_json.CrunchyJSON(plugId=plugId)
+        crj.CrunchyJSON(plugId=plugId)
 
         self.parseArgs()
         if checkMode:
