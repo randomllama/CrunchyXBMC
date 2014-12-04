@@ -223,7 +223,9 @@ class CrunchyJSON(object):
                 if request['error'] is False:
                     userData['auth_token']   = request['data']['auth']
                     userData['auth_expires'] = dateutil.parser.parse(request['data']['expires'])
-                    userData['premium_type'] = 'free' if request['data']['user']['premium'] == '' else request['data']['user']['premium']
+                    userData['premium_type'] = ('free'
+                                                    if request['data']['user']['premium'] == ''
+                                                    else request['data']['user']['premium'])
 
                     xbmc.log("Crunchyroll.bundle ----> Login successful.")
 
@@ -300,7 +302,9 @@ class CrunchyJSON(object):
                 if request['error'] is False:
                     userData['session_id']      = request['data']['session_id']
                     userData['auth_expires']    = dateutil.parser.parse(request['data']['expires'])
-                    userData['premium_type']    = 'free' if request['data']['user']['premium'] == '' else request['data']['user']['premium']
+                    userData['premium_type']    = ('free'
+                                                       if request['data']['user']['premium'] == ''
+                                                       else request['data']['user']['premium'])
                     userData['auth_token']      = request['data']['auth']
                     # 4 hours is a guess. Might be +/- 4.
                     userData['session_expires'] = (current_datetime +
@@ -500,11 +504,28 @@ class CrunchyJSON(object):
                 counter = counter + 1
 
                 # Only available on some series
-                year        = 'None' if series['year'] is None else series['year']
-                description = '' if series['description'] is None else series['description'].encode('utf-8')
-                thumb       = '' if (series['portrait_image'] is None or series['portrait_image']['large_url'] is None or 'portrait_image' not in series or 'large_url' not in series['portrait_image']) else series['portrait_image']['full_url']
-                art         = '' if (series['landscape_image'] is None or series['landscape_image']['full_url'] is None or 'landscape_image' not in series or 'full_url' not in series['landscape_image']) else series['landscape_image']['full_url']
-                rating      = '0' if (series['rating'] == '' or 'rating' not in series) else series['rating']
+                year        = ('None'
+                                   if series['year'] is None
+                                   else series['year'])
+                description = (''
+                                   if series['description'] is None
+                                   else series['description'].encode('utf-8'))
+                thumb       = (''
+                                   if (series['portrait_image'] is None or
+                                      series['portrait_image']['large_url'] is None or
+                                      'portrait_image' not in series or
+                                      'large_url' not in series['portrait_image'])
+                                   else series['portrait_image']['full_url'])
+                art         = (''
+                                   if (series['landscape_image'] is None or
+                                      series['landscape_image']['full_url'] is None or
+                                      'landscape_image' not in series or
+                                      'full_url' not in series['landscape_image'])
+                                   else series['landscape_image']['full_url'])
+                rating      = ('0'
+                                   if (series['rating'] == '' or
+                                       'rating' not in series)
+                                   else series['rating'])
 
                 # Crunchyroll seems to like passing series
                 # without these things
@@ -639,14 +660,24 @@ class CrunchyJSON(object):
         for media in request:
             # The following are items to help display Recently Watched
             # and Queue items correctly
-            season      = media['collection']['season'] if mode == "history" else season
-            series_name = media['series']['name'] if mode == "history" else series_name
-            series_name = media['most_likely_media']['series_name'] if mode == "queue" else series_name
+            season      = (media['collection']['season']
+                               if mode == "history"
+                               else season)
+            series_name = (media['series']['name']
+                               if mode == "history"
+                               else series_name)
+            series_name = (media['most_likely_media']['series_name']
+                               if mode == "queue"
+                               else series_name)
             # On history/queue, the fanart is obtained directly from the json
-            fanart      = media['series']['landscape_image']['fwide_url'] if (mode == "history" or mode == "queue") else fanart
+            fanart      = (media['series']['landscape_image']['fwide_url']
+                               if (mode == "history" or mode == "queue")
+                               else fanart)
             # History media is one level deeper in the json string
             # than normal media items
-            media       = media['media'] if mode == "history" else media
+            media       = (media['media']
+                               if mode == "history"
+                               else media)
 
             # Some queue items don't have most_likely_media, skip them
             if mode == "queue" and 'most_likely_media' not in media:
@@ -660,25 +691,44 @@ class CrunchyJSON(object):
             available_datetime = dateutil.parser.parse(media['available_time']).astimezone(dateutil.tz.tzlocal())
             available_date     = available_datetime.date()
             available_delta    = available_datetime - current_datetime
-            available_in       = str(available_delta.days) + " days." if available_delta.days > 0 else str(available_delta.seconds/60/60) + " hours."
+            available_in       = (str(available_delta.days) + " days."
+                                      if available_delta.days > 0
+                                      else str(available_delta.seconds/60/60)
+                                          + " hours.")
 
             # Fix Crunchyroll inconsistencies & add details for upcoming or
             # unreleased episodes.
             # PV episodes have no episode number so we set it to 0.
-            media['episode_number'] = '0' if media['episode_number'] == '' else media['episode_number']
+            media['episode_number'] = ('0'
+                                           if media['episode_number'] == ''
+                                           else media['episode_number'])
             # CR puts letters into some rare episode numbers
             media['episode_number'] = re.sub('\D', '', media['episode_number'])
 
             if media['episode_number'] == '0':
-                name = "NO NAME" if media['name'] == '' else media['name']
+                name = ("NO NAME"
+                            if media['name'] == ''
+                            else media['name'])
             else:
                 # CR doesn't seem to include episode names for all media,
                 # make one up
-                name = "Episode " + str(media['episode_number']) if media['name'] == '' else "Episode " + media['episode_number'] + " - " + media['name']
+                name = ("Episode " + str(media['episode_number'])
+                            if media['name'] == ''
+                            else "Episode " + media['episode_number'] + " - "
+                                + media['name'])
 
-            name = series_name + " " + name if (mode == "history" or mode == "queue") else name
-            name = "* " + name if media['free_available'] is False else name
-            soon = "Coming Soon - " + series_name + " Episode " + str(media['episode_number']) if mode == "queue" else "Coming Soon - Episode " + str(media['episode_number'])
+            name = (series_name + " " + name
+                        if (mode == "history" or
+                            mode == "queue")
+                        else name)
+            name = ("* " + name
+                        if media['free_available'] is False
+                        else name)
+            soon = ("Coming Soon - " + series_name
+                    + " Episode " + str(media['episode_number'])
+                        if mode == "queue"
+                        else "Coming Soon - Episode "
+                            + str(media['episode_number']))
             # Set the name for upcoming episode
             name = soon if media['available'] is False else name
 
@@ -688,21 +738,38 @@ class CrunchyJSON(object):
             #season = '1' if season == '0' else season
 
             # Not all shows have thumbnails
-            thumb = "http://static.ak.crunchyroll.com/i/no_image_beta_full.jpg" if media['screenshot_image'] is None else media['screenshot_image']['fwide_url'] if media['free_available'] is True else media['screenshot_image']['fwidestar_url']
+            thumb = ("http://static.ak.crunchyroll.com/i/no_image_beta_full.jpg"
+                         if media['screenshot_image'] is None
+                         else media['screenshot_image']['fwide_url']
+                             if media['free_available'] is True
+                             else media['screenshot_image']['fwidestar_url'])
             # Sets the thumbnail to coming soon if the episode
             # isn't available yet
-            thumb = "http://static.ak.crunchyroll.com/i/coming_soon_beta_fwide.jpg" if media['available'] is False else thumb
+            thumb = ("http://static.ak.crunchyroll.com/i/coming_soon_beta_fwide.jpg"
+                         if media['available'] is False
+                         else thumb)
 
-            description = '' if media['description'] is None else media['description'].encode('utf-8')
+            description = (''
+                               if media['description'] is None
+                               else media['description'].encode('utf-8'))
             # Set the description for upcoming episodes
-            description = "This episode will be available in "+str(available_in) if media['available'] is False else description
+            description = ("This episode will be available in "
+                           + str(available_in)
+                               if media['available'] is False
+                               else description)
 
-            duration = "0" if media['available'] is False else str(media['duration'])
+            duration = ("0"
+                            if media['available'] is False
+                            else str(media['duration']))
             # Current playback point
-            playhead = "0" if media['available'] is False else str(media['playhead'])
+            playhead = ("0"
+                            if media['available'] is False
+                            else str(media['playhead']))
 
             # Adding published date instead
-            year = 'None' if media['available_time'] is None else media['available_time'][:10]
+            year = ('None'
+                        if media['available_time'] is None
+                        else media['available_time'][:10])
 
             url = media['url']
             media_id = url.split('-')[-1]
@@ -804,12 +871,27 @@ class CrunchyJSON(object):
                 for series in request['data']:
                     series      = series['series']
                     # Only available for some series
-                    year        = 'None' if series['year'] is None else series['year']
-                    description = '' if series['description'] is None else series['description'].encode('utf-8')
+                    year        = ('None'
+                                       if series['year'] is None
+                                       else series['year'])
+                    description = (''
+                                       if series['description'] is None
+                                       else series['description'].encode('utf-8'))
 
-                    thumb  = '' if (series['portrait_image'] is None or series['portrait_image']['large_url'] is None or 'portrait_image' not in series or 'large_url' not in series['portrait_image']) else series['portrait_image']['full_url']
-                    art    = '' if (series['landscape_image'] is None or series['landscape_image']['full_url'] is None or 'landscape_image' not in series or 'full_url' not in series['landscape_image']) else series['landscape_image']['full_url']
-                    rating = '0' if (series['rating'] == '' or 'rating' not in series) else series['rating']
+                    thumb  = (''
+                                  if (series['portrait_image'] is None or
+                                      series['portrait_image']['large_url'] is None or
+                                      'portrait_image' not in series or
+                                      'large_url' not in series['portrait_image'])
+                                  else series['portrait_image']['full_url'])
+                    art    = ('' if (series['landscape_image'] is None or
+                                     series['landscape_image']['full_url'] is None or
+                                     'landscape_image' not in series or
+                                     'full_url' not in series['landscape_image'])
+                                  else series['landscape_image']['full_url'])
+                    rating = ('0' if (series['rating'] == '' or
+                                      'rating' not in series)
+                                  else series['rating'])
 
                     # Crunchyroll seems to like passing series
                     # without these things
