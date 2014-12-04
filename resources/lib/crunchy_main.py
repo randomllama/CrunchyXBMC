@@ -71,50 +71,50 @@ class UI(object):
     def addItem(self, info, isFolder=True, total_items=0):
         # Defaults in dict. Use 'None' instead of None so it is compatible for
         # quote_plus in parseArgs.
-        info.setdefault('url','None')
-        info.setdefault('Thumb','None')
+        info.setdefault('url',       'None')
+        info.setdefault('Thumb',     'None')
         info.setdefault('Fanart_Image',
                         xbmc.translatePath(self._addon.getAddonInfo('fanart')))
-        info.setdefault('mode','None')
-        info.setdefault('count','0')
-        info.setdefault('filterx','None')
-        info.setdefault('id','None')
-        info.setdefault('series_id','None')
-        info.setdefault('offset','0')
-        info.setdefault('season','1')
-        info.setdefault('series_id','0')
-        info.setdefault('page_url','None')
-        info.setdefault('complete','True')
-        info.setdefault('showtype','None')
-        info.setdefault('Title','None')
-        info.setdefault('year','0')
-        info.setdefault('playhead','0')
-        info.setdefault('duration','0')
-        info.setdefault('plot','None')
+        info.setdefault('mode',      'None')
+        info.setdefault('count',     '0')
+        info.setdefault('filterx',   'None')
+        info.setdefault('id',        'None')
+        info.setdefault('series_id', 'None')
+        info.setdefault('offset',    '0')
+        info.setdefault('season',    '1')
+        info.setdefault('series_id', '0')
+        info.setdefault('page_url',  'None')
+        info.setdefault('complete',  'True')
+        info.setdefault('showtype',  'None')
+        info.setdefault('Title',     'None')
+        info.setdefault('year',      '0')
+        info.setdefault('playhead',  '0')
+        info.setdefault('duration',  '0')
+        info.setdefault('plot',      'None')
 
         # Create params for xbmcplugin module
         u = sys.argv[0]+\
-            '?url='+urllib.quote_plus(info['url'])+\
-            '&mode='+urllib.quote_plus(info['mode'])+\
-            '&name='+urllib.quote_plus(info['Title'])+\
-            '&id='+urllib.quote_plus(info['id'])+\
-            '&count='+urllib.quote_plus(info['count'])+\
-            '&series_id='+urllib.quote_plus(info['series_id'])+\
-            '&filterx='+urllib.quote_plus(info['filterx'])+\
-            '&offset='+urllib.quote_plus(info['offset'])+\
-            '&icon='+urllib.quote_plus(info['Thumb'])+\
-            '&complete='+urllib.quote_plus(info['complete'])+\
-            '&fanart='+urllib.quote_plus(info['Fanart_Image'])+\
-            '&season='+urllib.quote_plus(info['season'])+\
-            '&showtype='+urllib.quote_plus(info['showtype'])+\
-            '&year='+urllib.quote_plus(info['year'])+\
-            '&playhead='+urllib.quote_plus(info['playhead'])+\
-            '&duration='+urllib.quote_plus(info['duration'])+\
-            '&plot='+urllib.quote_plus(info['plot']+'%20')
+            '?url='       + urllib.quote_plus(info['url'])          +\
+            '&mode='      + urllib.quote_plus(info['mode'])         +\
+            '&name='      + urllib.quote_plus(info['Title'])        +\
+            '&id='        + urllib.quote_plus(info['id'])           +\
+            '&count='     + urllib.quote_plus(info['count'])        +\
+            '&series_id=' + urllib.quote_plus(info['series_id'])    +\
+            '&filterx='   + urllib.quote_plus(info['filterx'])      +\
+            '&offset='    + urllib.quote_plus(info['offset'])       +\
+            '&icon='      + urllib.quote_plus(info['Thumb'])        +\
+            '&complete='  + urllib.quote_plus(info['complete'])     +\
+            '&fanart='    + urllib.quote_plus(info['Fanart_Image']) +\
+            '&season='    + urllib.quote_plus(info['season'])       +\
+            '&showtype='  + urllib.quote_plus(info['showtype'])     +\
+            '&year='      + urllib.quote_plus(info['year'])         +\
+            '&playhead='  + urllib.quote_plus(info['playhead'])     +\
+            '&duration='  + urllib.quote_plus(info['duration'])     +\
+            '&plot='      + urllib.quote_plus(info['plot']          +'%20')
 
         # Create list item
-        li=xbmcgui.ListItem(label          = info['Title'],
-                            thumbnailImage = info['Thumb'])
+        li = xbmcgui.ListItem(label          = info['Title'],
+                              thumbnailImage = info['Thumb'])
         li.setInfo(type       = "Video",
                    infoLabels = {"Title": info['Title'],
                                  "Plot":  info['plot'],
@@ -127,7 +127,7 @@ class UI(object):
             # Let xbmc know this can be played, unlike a folder.
             # Add context menu items to non-folder items.
             contextmenu = [('Queue Video', 'Action(Queue)')]
-            li.addContextMenuItems( contextmenu )
+            li.addContextMenuItems(contextmenu)
         # For folders, completely remove contextmenu, as it is totally useless
         else:
             li.addContextMenuItems([], replaceItems=True)
