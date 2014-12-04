@@ -30,7 +30,7 @@ __settings__ = sys.modules["__main__"].__settings__
 
 ###############################################################################
 
-class updateArgs:
+class updateArgs(object):
 
     def __init__(self, *args, **kwargs):
         for key, value in kwargs.iteritems():
@@ -42,7 +42,7 @@ class updateArgs:
 
 
 
-class UI:
+class UI(object):
 
     def __init__(self):
         self.main = Main(checkMode = False)
@@ -275,7 +275,7 @@ class UI:
 
 
 
-class Main:
+class Main(object):
 
     def __init__(self, checkMode=True):
         crunchy_json.CrunchyJSON().loadShelf()
