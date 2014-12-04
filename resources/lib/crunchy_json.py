@@ -8,6 +8,7 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 
 You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
+
 import sys
 import os
 import datetime
@@ -24,22 +25,26 @@ import gzip
 import StringIO
 import dateutil.tz, dateutil.relativedelta, dateutil.parser
 import crunchy_main
-__settings__ = sys.modules[ "__main__" ].__settings__
-lineupRegion = __settings__.getSetting("lineupRegion")
-__version__ = sys.modules[ "__main__" ].__version__
-__XBMCBUILD__ = xbmc.getInfoLabel( "System.BuildVersion" ) +" "+ sys.platform
+
+__settings__  = sys.modules["__main__"].__settings__
+lineupRegion  = __settings__.getSetting("lineupRegion")
+__version__   = sys.modules["__main__"].__version__
+__XBMCBUILD__ = xbmc.getInfoLabel("System.BuildVersion") + " " + sys.platform
 
 
 
 class _Info:
 
-        def __init__( self, *args, **kwargs ):
+        def __init__(self, *args, **kwargs ):
                 self.__dict__.update( kwargs )
+
+
 
 class CrunchyJSON:
 
-        def __init__(self, checkMode = True):
+        def __init__(self, checkMode=True):
                 self.loadShelf()
+
 
         def loadShelf(self):
                 try:
@@ -245,7 +250,6 @@ class CrunchyJSON:
                                 userData.Save()
                                 return False
 
-
                 #If we got to this point that means a session exists and it's still valid, we don't need to do anything.
                 elif userData.has_key("session_id") and current_datetime < userData['session_expires']:
                     #This secion below is Stupid Slow
@@ -288,8 +292,6 @@ class CrunchyJSON:
                                         userData.close()
                                         return False
 
-
-
                 #This is here as a catch all in case something gets messed up along the way. Remove userData variables so we start a new session next time around.
                 else:
                         del userData['session_id']
@@ -302,7 +304,7 @@ class CrunchyJSON:
                         userData.close()
                         return False
 
-#-----------------------------------------------------------------------
+
         def list_series(self, title, media_type, filterx, offset):
             fields = "series.name,series.description,series.series_id,series.rating,series.media_count,series.url,series.publisher_name,series.year,series.portrait_image,image.large_url,series.landscape_image,image.full_url"
             options = {'media_type':media_type.lower(), 'filter':filterx, 'fields':fields, 'limit':'64', 'offset':int(offset)}
@@ -324,7 +326,6 @@ class CrunchyJSON:
 
             crunchy_main.UI().endofdirectory('none')
 
-#-------------------------------------------------------------------------
 
         def list_categories(self, title, media_type, filterx):
             options = {'media_type':media_type.lower()}
@@ -341,7 +342,6 @@ class CrunchyJSON:
                                             crunchy_main.UI().addItem({'Title':season['label'].encode("utf8"),'mode':'list_series','showtype':media_type,'filterx':'tag:'+season['tag']}, True)
             crunchy_main.UI().endofdirectory('none')
 
- #--------------------------------------------------------------------------
 
         def list_collections(self, series_id, series_name, count, thumb, fanart):
                 fields = "collection.collection_id,collection.season,collection.name,collection.description,collection.complete,collection.media_count"
@@ -358,7 +358,7 @@ class CrunchyJSON:
                                         crunchy_main.UI().addItem({'Title':collection['name'].encode("utf8"),'filterx':series_name,'mode':'list_media','count':str(count),'id':collection['collection_id'],'plot':collection['description'].encode("utf8"),'complete':complete,'season':str(collection['season']) , 'series_id':series_id,'Thumb':thumb, 'Fanart_Image':fanart}, True)
                 crunchy_main.UI().endofdirectory('none')
 
-####################################################################################################
+
         def list_media(self, collection_id, series_name, count, complete, season, fanart):
                 sort = 'asc' if complete is '1' else 'desc'
                 fields = "media.episode_number,media.name,media.description,media.media_type,media.series_name,media.available,media.available_time,media.free_available,media.free_available_time,media.playhead,media.duration,media.url,media.screenshot_image,image.fwide_url,image.fwidestar_url,series.landscape_image,image.full_url"
@@ -367,7 +367,7 @@ class CrunchyJSON:
                 if request['error'] is False:
                         return self.list_media_items(request['data'], series_name, season, 'normal', fanart)
 
-####################################################################################################
+
         def list_media_items(self, request, series_name, season, mode, fanart):
                 for media in request:
                         #The following are items to help display Recently Watched and Queue items correctly
@@ -412,8 +412,6 @@ class CrunchyJSON:
                 crunchy_main.UI().endofdirectory('none')
 
 
-#---------------------------------------------------------
-
         def History(self):
                 fields = "media.episode_number,media.name,media.description,media.media_type,media.series_name,media.available,media.available_time,media.free_available,media.free_available_time,media.duration,media.playhead,media.url,media.screenshot_image,image.fwide_url,image.fwidestar_url"
                 options = {'media_types':"anime|drama", 'fields':fields, 'limit':'256'}
@@ -421,7 +419,6 @@ class CrunchyJSON:
                 if request['error'] is False:
                         return self.list_media_items(request['data'], 'Recently Watched', '1', 'history', 'fanart')
 
-#----------------------------------------------------------------
 
         def Queue(self):
             queue_type = __settings__.getSetting("queue_type")
@@ -450,7 +447,6 @@ class CrunchyJSON:
 
                             crunchy_main.UI().endofdirectory('none')
 
- #-------------------------------------------------------------------------
 
         def startPlayback(self, Title, url, media_id, playhead, duration, Thumb):
 
@@ -539,6 +535,7 @@ class CrunchyJSON:
                                 values = {'session_id':session_id, 'event':'playback_status', 'locale':self.userData['API_LOCALE'], 'media_id':media_id, 'version':'221', 'playhead':strTimePlayed}
                                 request = self.makeAPIRequest('log', values)
 
+
         def makeAPIRequest(self, method, options):
                 if self.userData['premium_type'] in 'anime|drama|manga':
                         xbmc.log( "Crunchyroll.bundle ----> get JSON")
@@ -557,9 +554,6 @@ class CrunchyJSON:
                         return json.loads(json_data)
                 else:
                         return False
-
-
-###############################################################################​#####################
 
 
         def changeLocale(self):
@@ -600,6 +594,7 @@ class CrunchyJSON:
                 xbmc.log( "Crunchyroll.language: --> Disabling the force change language setting.")
                 __settings__.setSetting(id="change_language", value="0")
 
+
         def usage_reporting(self):
                 import cookielib
                 cj = cookielib.LWPCookieJar()
@@ -611,5 +606,3 @@ class CrunchyJSON:
                 urllib2.install_opener(opener)
                 req = opener.open(url, data)
                 req.close()
-
-
