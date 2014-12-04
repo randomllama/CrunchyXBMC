@@ -16,22 +16,30 @@ this program; if not, write to the Free Software Foundation,
 Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys
 import os
-import datetime
-import urllib
-import urllib2
-import xbmc
-import xbmcgui
-import xbmcplugin
-import time
-import shelve
-import random, re, string
+import re
+import sys
 import json
 import gzip
+import time
+import random
+import shelve
+import string
+import urllib
+import urllib2
+import datetime
 import StringIO
-import dateutil.tz, dateutil.relativedelta, dateutil.parser
+import cookielib
+
+import xbmc
+import xbmcgui
+
+import dateutil.tz
+import dateutil.parser
+import dateutil.relativedelta
+
 import crunchy_main
+
 
 __settings__  = sys.modules["__main__"].__settings__
 lineupRegion  = __settings__.getSetting("lineupRegion")
@@ -970,8 +978,6 @@ class CrunchyJSON:
 
 
     def changeLocale(self):
-        import cookielib
-
         cj           = cookielib.LWPCookieJar()
         local_string = __settings__.getLocalizedString
 
@@ -1034,7 +1040,6 @@ class CrunchyJSON:
 
 
     def usage_reporting(self):
-        import cookielib
         cj = cookielib.LWPCookieJar()
 
         xbmc.log("Crunchyroll.usage: --> Attempting to report usage")
