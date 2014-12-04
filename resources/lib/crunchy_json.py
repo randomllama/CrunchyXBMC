@@ -22,7 +22,7 @@ import random, re, string
 import json
 import gzip
 import StringIO
-import dateutil.tz, dateutil.relativedelta, dateutil.parser 
+import dateutil.tz, dateutil.relativedelta, dateutil.parser
 import crunchy_main
 __settings__ = sys.modules[ "__main__" ].__settings__
 lineupRegion = __settings__.getSetting("lineupRegion")
@@ -32,9 +32,9 @@ __XBMCBUILD__ = xbmc.getInfoLabel( "System.BuildVersion" ) +" "+ sys.platform
 
 
 class _Info:
-	
-	def __init__( self, *args, **kwargs ):
-		self.__dict__.update( kwargs )
+
+        def __init__( self, *args, **kwargs ):
+                self.__dict__.update( kwargs )
 
 class CrunchyJSON:
 
@@ -104,7 +104,7 @@ class CrunchyJSON:
                         xbmc.log( "Crunchyroll -> Unable to Load shelve")
                         return False
 
-                #Check to see if a session_id doesn't exist or if the current auth token is invalid and if so start a new session and log it in.                   
+                #Check to see if a session_id doesn't exist or if the current auth token is invalid and if so start a new session and log it in.
                 if (not userData.has_key('session_id')) or (not userData.has_key('auth_expires')) or current_datetime > userData['auth_expires']:
                         #Start new session
                         xbmc.log( "Crunchyroll;xbmc ----> Starting new session")
@@ -116,13 +116,13 @@ class CrunchyJSON:
                         req = opener.open(url, options)
                         json_data = req.read()
                         if req.headers.get('content-encoding', None) == 'gzip':
-				json_data = gzip.GzipFile(fileobj=StringIO.StringIO(json_data)).read().decode('utf-8','ignore')
-			req.close()
-                        request = json.loads(json_data)  
+                                json_data = gzip.GzipFile(fileobj=StringIO.StringIO(json_data)).read().decode('utf-8','ignore')
+                        req.close()
+                        request = json.loads(json_data)
                         if request['error'] is False:
-                                userData['session_id'] = request['data']['session_id'] 
+                                userData['session_id'] = request['data']['session_id']
                                 userData['session_expires'] = (current_datetime + dateutil.relativedelta.relativedelta( hours = +4 ))
-                                userData['test_session'] = current_datetime 
+                                userData['test_session'] = current_datetime
                                 xbmc.log( "Crunchyroll.bundle ----> New session created! Session ID is: "+ str(userData['session_id']))
                         elif request['error'] is True:
                                 xbmc.log( "Crunchyroll.bundle ----> Error starting new session. Error message is: "+ str(request['message']))
@@ -136,7 +136,7 @@ class CrunchyJSON:
                                 xbmc.executebuiltin(ex)
                                 xbmc.log( "crunchyroll-takeout -> NO CRUNCHYROLL ACCOUNT FOUND!")
                                 return False
-                        else: 
+                        else:
                                 xbmc.log("Crunchyroll.bundle ----> Logging in the new session we just created.")
                                 opener = urllib2.build_opener()
                                 opener.addheaders = userData['API_HEADERS']
@@ -147,9 +147,9 @@ class CrunchyJSON:
                                 if req.headers.get('content-encoding', None) == 'gzip':
                                         json_data = gzip.GzipFile(fileobj=StringIO.StringIO(json_data)).read().decode('utf-8','ignore')
                                 req.close()
-                                request = json.loads(json_data) 
+                                request = json.loads(json_data)
                                 if request['error'] is False:
-                                        userData['auth_token'] = request['data']['auth'] 
+                                        userData['auth_token'] = request['data']['auth']
                                         userData['auth_expires'] = dateutil.parser.parse(request['data']['expires'])
                                         userData['premium_type'] = 'free' if request['data']['user']['premium'] == '' else request['data']['user']['premium']
                                         xbmc.log("Crunchyroll.bundle ----> Login successful.")
@@ -162,7 +162,7 @@ class CrunchyJSON:
                         if current_datetime > userData['lastreported']:
                                 userData['lastreported'] = (current_datetime + dateutil.relativedelta.relativedelta( hours = +24 ))
                                 self.userData = userData
-                                self.usage_reporting() 
+                                self.usage_reporting()
                         #Verify user is premium
                         if userData['premium_type'] in 'anime|drama|manga':
                                 xbmc.log("Crunchyroll.bundle ----> User is a premium "+str(userData['premium_type'])+" member.")
@@ -178,7 +178,7 @@ class CrunchyJSON:
                                 crunchy_main.UI().endofdirectory('none')
                                 return False
 
-                #Check to see if a valid session and auth token exist and if so reinitialize a new session using the auth token. 
+                #Check to see if a valid session and auth token exist and if so reinitialize a new session using the auth token.
                 elif userData.has_key("session_id") and userData.has_key("auth_expires") and current_datetime < userData['auth_expires'] and current_datetime > userData['session_expires']:
 
                         #Re-start new session
@@ -190,24 +190,24 @@ class CrunchyJSON:
                         req = opener.open(url, options)
                         json_data = req.read()
                         if req.headers.get('content-encoding', None) == 'gzip':
-				json_data = gzip.GzipFile(fileobj=StringIO.StringIO(json_data)).read().decode('utf-8','ignore')
-			req.close()
-                        request = json.loads(json_data)  
+                                json_data = gzip.GzipFile(fileobj=StringIO.StringIO(json_data)).read().decode('utf-8','ignore')
+                        req.close()
+                        request = json.loads(json_data)
                         try:
                                 if request['error'] is False:
-                                        userData['session_id'] = request['data']['session_id'] 
-                                        userData['auth_expires'] = dateutil.parser.parse(request['data']['expires']) 
+                                        userData['session_id'] = request['data']['session_id']
+                                        userData['auth_expires'] = dateutil.parser.parse(request['data']['expires'])
                                         userData['premium_type'] = 'free' if request['data']['user']['premium'] == '' else request['data']['user']['premium']
-                                        userData['auth_token'] = request['data']['auth'] 
+                                        userData['auth_token'] = request['data']['auth']
                                         userData['session_expires'] = (current_datetime + dateutil.relativedelta.relativedelta( hours = +4 )) #4 hours is a guess. Might be +/- 4.
-                                        userData['test_session'] = current_datetime 
+                                        userData['test_session'] = current_datetime
                                         xbmc.log("Crunchyroll.bundle ----> Session restart successful. New session_id is: "+ str(userData['session_id']))
                                         #Call for Usage Reporting
                                         if current_datetime > userData['lastreported']:
                                                 userData['lastreported'] = (current_datetime + dateutil.relativedelta.relativedelta( hours = +24 ))
                                                 self.userData = userData
-                                                self.usage_reporting() 
-                                                
+                                                self.usage_reporting()
+
                                         #Verify user is premium
                                         if userData['premium_type'] in 'anime|drama|manga':
                                                 xbmc.log("Crunchyroll.bundle ----> User is a premium "+str(userData['premium_type'])+" member.")
@@ -224,7 +224,7 @@ class CrunchyJSON:
                                                 return False
 
                                 elif request['error'] is True:
-                                        #Remove userData so we start a new session next time around. 
+                                        #Remove userData so we start a new session next time around.
                                         del userData['session_id']
                                         del userData['auth_expires']
                                         del userData['premium_type']
@@ -244,25 +244,25 @@ class CrunchyJSON:
                                 self.userData = userData
                                 userData.Save()
                                 return False
-                        
+
 
                 #If we got to this point that means a session exists and it's still valid, we don't need to do anything.
                 elif userData.has_key("session_id") and current_datetime < userData['session_expires']:
                     #This secion below is Stupid Slow
                         #return True
                         if userData['test_session'] is None or current_datetime > userData['test_session']:
-                                userData['test_session'] = (current_datetime + dateutil.relativedelta.relativedelta( minutes = +10 )) #test once every 10 min 
-                                #Test to make sure the session still works. (Sometimes sessions just stop working.) 
+                                userData['test_session'] = (current_datetime + dateutil.relativedelta.relativedelta( minutes = +10 )) #test once every 10 min
+                                #Test to make sure the session still works. (Sometimes sessions just stop working.)
                                 fields = "media.episode_number,media.name,media.description,media.media_type,media.series_name,media.available,media.available_time,media.free_available,media.free_available_time,media.duration,media.url,media.screenshot_image,image.fwide_url,image.fwidestar_url,series.landscape_image,image.full_url"
                                 options = {'media_types':"anime|drama", 'fields':fields}
                                 request = self.makeAPIRequest('queue', options)
-                                if request['error'] is False:	
+                                if request['error'] is False:
                                         xbmc.log("Crunchyroll.bundle ----> A valid session was detected. Using existing session_id of: "+ str(userData['session_id']))
                                         #Call for Usage Reporting
                                         if current_datetime > userData['lastreported']:
                                                 userData['lastreported'] = (current_datetime + dateutil.relativedelta.relativedelta( hours = +24 ))
                                                 self.userData = userData
-                                                self.usage_reporting() 
+                                                self.usage_reporting()
                                         #Verify user is premium
                                         if userData['premium_type'] in 'anime|drama|manga':
                                                 xbmc.log("Crunchyroll.bundle ----> User is a premium "+str(userData['premium_type'])+" member.")
@@ -276,7 +276,7 @@ class CrunchyJSON:
                                                 userData.close()
                                                 crunchy_main.UI().addItem({'Title':acc_type_error, 'mode':'Fail'})
                                                 crunchy_main.UI().endofdirectory('none')
-                                                return False					
+                                                return False
                                 elif request['error'] is True:
                                         xbmc.log("Crunchyroll.bundle ----> Something in the login process went wrong.")
                                         del userData['session_id']
@@ -285,12 +285,12 @@ class CrunchyJSON:
                                         del userData['auth_token']
                                         del userData['session_expires']
                                         self.userData = userData
-                                        userData.close()	
+                                        userData.close()
                                         return False
 
-                 
-                
-                #This is here as a catch all in case something gets messed up along the way. Remove userData variables so we start a new session next time around. 
+
+
+                #This is here as a catch all in case something gets messed up along the way. Remove userData variables so we start a new session next time around.
                 else:
                         del userData['session_id']
                         del userData['auth_expires']
@@ -299,11 +299,11 @@ class CrunchyJSON:
                         del userData['session_expires']
                         xbmc.log("Crunchyroll.bundle ----> Something in the login process went wrong.")
                         self.userData = userData
-                        userData.close()	
+                        userData.close()
                         return False
-                    
+
 #-----------------------------------------------------------------------
-        def list_series(self, title, media_type, filterx, offset): 
+        def list_series(self, title, media_type, filterx, offset):
             fields = "series.name,series.description,series.series_id,series.rating,series.media_count,series.url,series.publisher_name,series.year,series.portrait_image,image.large_url,series.landscape_image,image.full_url"
             options = {'media_type':media_type.lower(), 'filter':filterx, 'fields':fields, 'limit':'64', 'offset':int(offset)}
             request = self.makeAPIRequest('list_series', options)
@@ -313,11 +313,11 @@ class CrunchyJSON:
                             counter = counter + 1
                             year = 'None' if series['year'] is None else series['year'] #only available on some series
                             description = '' if series['description'] is None else series['description'].encode('utf-8') #Adding sinopses
-                            thumb = '' if (series['portrait_image'] is None or series['portrait_image']['large_url'] is None or 'portrait_image' not in series or 'large_url' not in series['portrait_image']) else series['portrait_image']['full_url'] #Becuase not all series have a thumbnail. 
-                            art = '' if (series['landscape_image'] is None or series['landscape_image']['full_url'] is None or 'landscape_image' not in series or 'full_url' not in series['landscape_image']) else series['landscape_image']['full_url'] #Becuase not all series have art. 
+                            thumb = '' if (series['portrait_image'] is None or series['portrait_image']['large_url'] is None or 'portrait_image' not in series or 'large_url' not in series['portrait_image']) else series['portrait_image']['full_url'] #Becuase not all series have a thumbnail.
+                            art = '' if (series['landscape_image'] is None or series['landscape_image']['full_url'] is None or 'landscape_image' not in series or 'full_url' not in series['landscape_image']) else series['landscape_image']['full_url'] #Becuase not all series have art.
                             rating = '0' if (series['rating'] == '' or 'rating' not in series) else series['rating'] #Because Crunchyroll seems to like passing series without ratings
                             if ('media_count' in series and 'series_id' in series and 'name' in series and series['media_count'] > 0): #Because Crunchyroll seems to like passing series without these things
-                                crunchy_main.UI().addItem({'Title':series['name'].encode("utf8"),'mode':'list_coll', 'series_id':series['series_id'], 'count':str(series['media_count']), 'Thumb':thumb, 'Fanart_Image':art, 'plot':description, 'year':year}, True) 
+                                crunchy_main.UI().addItem({'Title':series['name'].encode("utf8"),'mode':'list_coll', 'series_id':series['series_id'], 'count':str(series['media_count']), 'Thumb':thumb, 'Fanart_Image':art, 'plot':description, 'year':year}, True)
                     if counter >= 64:
                             offset = (int(offset) + counter)
                             crunchy_main.UI().addItem({'Title':'...load more','mode':'list_series','showtype':media_type,'filterx':filterx, 'offset':str(offset)})
@@ -326,7 +326,7 @@ class CrunchyJSON:
 
 #-------------------------------------------------------------------------
 
-        def list_categories(self, title, media_type, filterx): 
+        def list_categories(self, title, media_type, filterx):
             options = {'media_type':media_type.lower()}
             request = self.makeAPIRequest('categories', options)
             if request['error'] is False:
@@ -342,7 +342,7 @@ class CrunchyJSON:
             crunchy_main.UI().endofdirectory('none')
 
  #--------------------------------------------------------------------------
-            
+
         def list_collections(self, series_id, series_name, count, thumb, fanart):
                 fields = "collection.collection_id,collection.season,collection.name,collection.description,collection.complete,collection.media_count"
                 options = {'series_id':series_id, 'fields':fields, 'sort':'desc', 'limit':count}
@@ -356,7 +356,7 @@ class CrunchyJSON:
                                 for collection in request['data']:
                                         complete = '1' if collection['complete'] else '0'
                                         crunchy_main.UI().addItem({'Title':collection['name'].encode("utf8"),'filterx':series_name,'mode':'list_media','count':str(count),'id':collection['collection_id'],'plot':collection['description'].encode("utf8"),'complete':complete,'season':str(collection['season']) , 'series_id':series_id,'Thumb':thumb, 'Fanart_Image':fanart}, True)
-                crunchy_main.UI().endofdirectory('none')		
+                crunchy_main.UI().endofdirectory('none')
 
 ####################################################################################################
         def list_media(self, collection_id, series_name, count, complete, season, fanart):
@@ -364,32 +364,32 @@ class CrunchyJSON:
                 fields = "media.episode_number,media.name,media.description,media.media_type,media.series_name,media.available,media.available_time,media.free_available,media.free_available_time,media.playhead,media.duration,media.url,media.screenshot_image,image.fwide_url,image.fwidestar_url,series.landscape_image,image.full_url"
                 options = {'collection_id':collection_id, 'fields':fields, 'sort':sort, 'limit':'256'}
                 request = self.makeAPIRequest('list_media', options)
-                if request['error'] is False:	
+                if request['error'] is False:
                         return self.list_media_items(request['data'], series_name, season, 'normal', fanart)
-            
+
 ####################################################################################################
         def list_media_items(self, request, series_name, season, mode, fanart):
                 for media in request:
                         #The following are items to help display Recently Watched and Queue items correctly
-                        season = media['collection']['season'] if mode == "history" else season 
+                        season = media['collection']['season'] if mode == "history" else season
                         series_name = media['series']['name'] if mode == "history" else series_name
                         series_name = media['most_likely_media']['series_name'] if mode == "queue" else series_name
                         fanart = media['series']['landscape_image']['fwide_url'] if (mode == "history" or mode == "queue") else fanart  #On history/queue, the fanart is get directly from the json.
-                        media = media['media'] if mode == "history" else media  #History media is one level deeper in the json string than normal media items. 
+                        media = media['media'] if mode == "history" else media  #History media is one level deeper in the json string than normal media items.
                         if mode == "queue" and 'most_likely_media' not in media: #Some queue items don't have most_likely_media so we have to skip them.
-                                continue 
+                                continue
                         media = media['most_likely_media'] if mode == "queue" else media  #Queue media is one level deeper in the json string than normal media items.
-                        
+
                         #Dates, times, and such
-                        current_datetime = datetime.datetime.now(dateutil.tz.tzutc()) 
+                        current_datetime = datetime.datetime.now(dateutil.tz.tzutc())
                         available_datetime = dateutil.parser.parse(media['available_time']).astimezone(dateutil.tz.tzlocal())
-                        available_date = available_datetime.date() 
+                        available_date = available_datetime.date()
                         available_delta = available_datetime - current_datetime
                         available_in = str(available_delta.days)+" days." if available_delta.days > 0 else str(available_delta.seconds/60/60)+" hours."
-                        
+
                         #Fix Crunchyroll inconsistencies & add details for upcoming or unreleased episodes
-                        media['episode_number'] = '0' if media['episode_number'] == '' else media['episode_number'] #PV episodes have no episode number so we set it to 0. 
-                        media['episode_number'] = re.sub('\D', '', media['episode_number'])	#Because CR puts letters into some rare episode numbers.
+                        media['episode_number'] = '0' if media['episode_number'] == '' else media['episode_number'] #PV episodes have no episode number so we set it to 0.
+                        media['episode_number'] = re.sub('\D', '', media['episode_number'])        #Because CR puts letters into some rare episode numbers.
                         if media['episode_number'] == '0':
                                 name = "NO NAME" if media['name'] == '' else media['name']
                         else:
@@ -398,7 +398,7 @@ class CrunchyJSON:
                         name = "* " + name if media['free_available'] is False else name
                         soon = "Coming Soon - " + series_name + " Episode "+str(media['episode_number']) if mode == "queue" else "Coming Soon - Episode "+str(media['episode_number'])
                         name = soon if media['available'] is False else name #Set the name for upcoming episode
-                        #season = '1' if season == '0' else season #There is a bug which prevents Season 0 from displaying correctly in PMC. This is to help fix that. Will break if a series has both season 0 and 1. 
+                        #season = '1' if season == '0' else season #There is a bug which prevents Season 0 from displaying correctly in PMC. This is to help fix that. Will break if a series has both season 0 and 1.
                         thumb = "http://static.ak.crunchyroll.com/i/no_image_beta_full.jpg" if media['screenshot_image'] is None else media['screenshot_image']['fwide_url'] if media['free_available'] is True else media['screenshot_image']['fwidestar_url']#because not all shows have thumbnails.
                         thumb = "http://static.ak.crunchyroll.com/i/coming_soon_beta_fwide.jpg" if media['available'] is False else thumb #Sets the thumbnail to coming soon if the episode isn't available yet.
                         description = '' if media['description'] is None else media['description'].encode('utf-8') #Adding sinopses
@@ -418,7 +418,7 @@ class CrunchyJSON:
                 fields = "media.episode_number,media.name,media.description,media.media_type,media.series_name,media.available,media.available_time,media.free_available,media.free_available_time,media.duration,media.playhead,media.url,media.screenshot_image,image.fwide_url,image.fwidestar_url"
                 options = {'media_types':"anime|drama", 'fields':fields, 'limit':'256'}
                 request = self.makeAPIRequest('recently_watched', options)
-                if request['error'] is False:	
+                if request['error'] is False:
                         return self.list_media_items(request['data'], 'Recently Watched', '1', 'history', 'fanart')
 
 #----------------------------------------------------------------
@@ -429,8 +429,8 @@ class CrunchyJSON:
                     fields = "media.episode_number,media.name,media.description,media.media_type,media.series_name,media.available,media.available_time,media.free_available,media.free_available_time,media.duration,media.playhead,media.url,media.screenshot_image,image.fwide_url,image.fwidestar_url,series.landscape_image,image.full_url"
                     options = {'media_types':"anime|drama", 'fields':fields}
                     request = self.makeAPIRequest('queue', options)
-                    if request['error'] is False:	
-                            return self.list_media_items(request['data'], 'Queue', '1', 'queue', 'fanart')				
+                    if request['error'] is False:
+                            return self.list_media_items(request['data'], 'Queue', '1', 'queue', 'fanart')
 
             elif queue_type == '1':
                     fields = "series.name,series.description,series.series_id,series.rating,series.media_count,series.url,series.publisher_name,series.year,series.portrait_image,image.large_url,series.landscape_image,image.full_url"
@@ -441,16 +441,16 @@ class CrunchyJSON:
                                     series = series['series']
                                     year = 'None' if series['year'] is None else series['year'] #only available on some series
                                     description = '' if series['description'] is None else series['description'].encode('utf-8') #Adding sinopses
-                                    
-                                    thumb = '' if (series['portrait_image'] is None or series['portrait_image']['large_url'] is None or 'portrait_image' not in series or 'large_url' not in series['portrait_image']) else series['portrait_image']['full_url'] #Becuase not all series have a thumbnail. 
-                                    art = '' if (series['landscape_image'] is None or series['landscape_image']['full_url'] is None or 'landscape_image' not in series or 'full_url' not in series['landscape_image']) else series['landscape_image']['full_url'] #Becuase not all series have art. 
+
+                                    thumb = '' if (series['portrait_image'] is None or series['portrait_image']['large_url'] is None or 'portrait_image' not in series or 'large_url' not in series['portrait_image']) else series['portrait_image']['full_url'] #Becuase not all series have a thumbnail.
+                                    art = '' if (series['landscape_image'] is None or series['landscape_image']['full_url'] is None or 'landscape_image' not in series or 'full_url' not in series['landscape_image']) else series['landscape_image']['full_url'] #Becuase not all series have art.
                                     rating = '0' if (series['rating'] == '' or 'rating' not in series) else series['rating'] #Because Crunchyroll seems to like passing series without ratings
                                     if ('media_count' in series and 'series_id' in series and 'name' in series and series['media_count'] > 0): #Because Crunchyroll seems to like passing series without these things
                                             crunchy_main.UI().addItem({'Title':series['name'].encode("utf8"),'mode':'list_coll', 'series_id':series['series_id'], 'Thumb':thumb, 'Fanart_Image':art, 'plot':description, 'year':year}, True)
-                            
+
                             crunchy_main.UI().endofdirectory('none')
-                        
- #-------------------------------------------------------------------------                       
+
+ #-------------------------------------------------------------------------
 
         def startPlayback(self, Title, url, media_id, playhead, duration, Thumb):
 
@@ -470,7 +470,7 @@ class CrunchyJSON:
                 local_string = __settings__.getLocalizedString
                 notice_msg = local_string(30200).encode("utf8")
                 setup_msg = local_string(30212).encode("utf8")
-                #Make the API call 
+                #Make the API call
                 fields = "media.episode_number,media.name,media.description,media.url,media.stream_data"
                 values = {'session_id':self.userData['session_id'], 'version':self.userData['API_VERSION'], 'locale':self.userData['API_LOCALE'], 'media_id':media_id, 'fields':fields}
                 opener = urllib2.build_opener()
@@ -487,17 +487,17 @@ class CrunchyJSON:
                 if int(resumetime) > 0:
                         playcount=0
                 else:
-                        playcount=1                      
+                        playcount=1
                 item = xbmcgui.ListItem(Title)
                 item.setInfo( type="Video", infoLabels={ "Title": Title, "playcount":playcount})
                 item.setThumbnailImage(Thumb)
                 item.setProperty('TotalTime', totaltime)
-                item.setProperty('ResumeTime', resumetime)                        
+                item.setProperty('ResumeTime', resumetime)
                 count=0
                 allurl = {}
                 playlist = xbmc.PlayList(1)
                 playlist.clear()
-                if request['error'] is False:	
+                if request['error'] is False:
                         if request['data']['stream_data'] is not None:
                                 for stream in request['data']['stream_data']['streams']:
                                         allurl[stream['quality']] = stream['url']
@@ -542,8 +542,8 @@ class CrunchyJSON:
         def makeAPIRequest(self, method, options):
                 if self.userData['premium_type'] in 'anime|drama|manga':
                         xbmc.log( "Crunchyroll.bundle ----> get JSON")
-                        values = {'session_id':self.userData['session_id'], 'version':self.userData['API_VERSION'], 'locale':self.userData['API_LOCALE']} 
-                        values.update(options)	
+                        values = {'session_id':self.userData['session_id'], 'version':self.userData['API_VERSION'], 'locale':self.userData['API_LOCALE']}
+                        values.update(options)
                         opener = urllib2.build_opener()
                         opener.addheaders = self.userData['API_HEADERS']
                         options = urllib.urlencode(values)
@@ -558,7 +558,7 @@ class CrunchyJSON:
                 else:
                         return False
 
-         
+
 ###############################################################################​#####################
 
 
@@ -581,7 +581,7 @@ class CrunchyJSON:
                     urllib2.install_opener(opener)
                     req = opener.open(url, data)
                     req.close()
-                else:                    
+                else:
                     xbmc.executebuiltin('Notification('+notice+','+notice_err+',5000,'+icon+')')
                     xbmc.log( "Crunchyroll.language: --> NO CRUNCHYROLL ACCOUNT FOUND!")
                 url = 'https://www.crunchyroll.com/?a=formhandler'
@@ -611,5 +611,5 @@ class CrunchyJSON:
                 urllib2.install_opener(opener)
                 req = opener.open(url, data)
                 req.close()
-                
-        
+
+
