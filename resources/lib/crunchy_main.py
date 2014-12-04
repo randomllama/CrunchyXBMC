@@ -33,7 +33,7 @@ class updateArgs:
 		self.__dict__.update(kwargs)
 
 class UI:
-	
+
 	def __init__(self):
 		self.main = Main(checkMode = False)
 		xbmcplugin.setContent(int(sys.argv[1]), 'movies')
@@ -51,7 +51,7 @@ class UI:
 		#let xbmc know the script is done adding items to the list.
 		dontAddToHierarchy = False
 		xbmcplugin.endOfDirectory(handle = int(sys.argv[1]), updateListing = dontAddToHierarchy)
-			
+
 	def addItem(self, info, isFolder=True, total_items = 0):
 		#Defaults in dict. Use 'None' instead of None so it is compatible for quote_plus in parseArgs
 		info.setdefault('url','None')
@@ -126,7 +126,7 @@ class UI:
                         self.addItem({'Title':Anime, 'mode':'Channels','showtype':'Anime'})
                         self.addItem({'Title':Drama, 'mode':'Channels','showtype':'Drama'})
                         self.endofdirectory()
-                        
+
 
 	def channels(self):
                 local_string = __settings__.getLocalizedString
@@ -144,16 +144,16 @@ class UI:
                 self.addItem({'Title':Browse_by_Genre,  'mode':'list_categories', 'showtype':showtype, 'filterx':'genre', 'offset':'0'})
                 self.addItem({'Title':seasons,          'mode':'list_categories', 'showtype':showtype, 'filterx':'season', 'offset':'0'})
                 self.endofdirectory()
-                
+
         def json_list_series(self):
                 crunchy_json.CrunchyJSON().list_series(self.main.args.name, self.main.args.showtype, self.main.args.filterx, self.main.args.offset)
 
         def json_list_cat(self):
                 crunchy_json.CrunchyJSON().list_categories(self.main.args.name, self.main.args.showtype, self.main.args.filterx)
-                
+
 	def json_list_collection(self):
 		crunchy_json.CrunchyJSON().list_collections(self.main.args.series_id, self.main.args.name, self.main.args.count, self.main.args.icon, self.main.args.fanart)
-		
+
 	def json_list_media(self):
 		crunchy_json.CrunchyJSON().list_media(self.main.args.id, self.main.args.filterx, self.main.args.count, self.main.args.complete, self.main.args.season, self.main.args.fanart)
 
@@ -162,7 +162,7 @@ class UI:
 
 	def queue(self):
                 crunchy_json.CrunchyJSON().Queue()
-		
+
 	def startVideo(self):
 		crunchy_json.CrunchyJSON().startPlayback(self.main.args.name, self.main.args.url, self.main.args.id, self.main.args.playhead, self.main.args.duration, self.main.args.icon)
 
@@ -181,7 +181,7 @@ class Main:
                 if checkMode:
                         self.checkMode()
 
-    
+
 	def parseArgs(self):
 		# call updateArgs() with our formatted argv to create the self.args object
 		if (sys.argv[2]):
@@ -215,6 +215,6 @@ class Main:
                 else:
                         UI().Fail()
 
-		
+
 
 
