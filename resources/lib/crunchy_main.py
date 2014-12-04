@@ -17,8 +17,8 @@ Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import sys
-import os
 import urllib
+
 import xbmc
 import xbmcgui
 import xbmcplugin
@@ -133,11 +133,11 @@ class UI(object):
             li.addContextMenuItems([], replaceItems=True)
 
         #add item to list
-        ok=xbmcplugin.addDirectoryItem(handle     = int(sys.argv[1]),
-                                       url        = u,
-                                       listitem   = li,
-                                       isFolder   = isFolder,
-                                       totalItems = total_items)
+        xbmcplugin.addDirectoryItem(handle     = int(sys.argv[1]),
+                                    url        = u,
+                                    listitem   = li,
+                                    isFolder   = isFolder,
+                                    totalItems = total_items)
 
 
     def showMain(self):
