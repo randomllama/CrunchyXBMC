@@ -2,11 +2,18 @@
 """
     CrunchyRoll;xbmc
     Copyright (C) 2012 - 2014 Matthew Beacher
-    This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License.
+    This program is free software; you can redistribute it and/or modify it
+    under the terms of the GNU General Public License as published by the
+    Free Software Foundation; either version 2 of the License.
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+details.
 
-You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation,
+Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import sys
@@ -21,7 +28,7 @@ import crunchy_json
 __settings__ = sys.modules["__main__"].__settings__
 
 
-#####################################################################################
+###############################################################################
 
 class updateArgs:
 
@@ -62,7 +69,8 @@ class UI:
 
 
     def addItem(self, info, isFolder=True, total_items=0):
-        #Defaults in dict. Use 'None' instead of None so it is compatible for quote_plus in parseArgs
+        # Defaults in dict. Use 'None' instead of None so it is compatible for
+        # quote_plus in parseArgs.
         info.setdefault('url','None')
         info.setdefault('Thumb','None')
         info.setdefault('Fanart_Image',
@@ -115,7 +123,8 @@ class UI:
 
         #for videos, replace context menu with queue and add to favorites
         if not isFolder:
-            #li.setProperty("IsPlayable", "true")#let xbmc know this can be played, unlike a folder.
+            #li.setProperty("IsPlayable", "true")
+            #let xbmc know this can be played, unlike a folder.
             #add context menu items to non-folder items.
             contextmenu = [('Queue Video', 'Action(Queue)')]
             li.addContextMenuItems( contextmenu )
@@ -276,12 +285,13 @@ class Main:
 
 
     def parseArgs(self):
-        # call updateArgs() with our formatted argv to create the self.args object
+        # Call updateArgs() with our formatted argv to create self.args object
         if (sys.argv[2]):
             exec "self.args = updateArgs(%s')" % (sys.argv[2][1:].replace('&', "',").replace('=', "='"))
         else:
             # updateArgs will turn the 'None' into None.
-            # Don't simply define it as None because unquote_plus in updateArgs will throw an exception.
+            # Don't simply define it as None because unquote_plus in updateArgs
+            # will throw an exception.
             # This is a pretty ugly solution
             self.args = updateArgs(mode = 'None',
                                    url  = 'None',
