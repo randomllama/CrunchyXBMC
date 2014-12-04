@@ -39,7 +39,7 @@ import dateutil.tz
 import dateutil.parser
 import dateutil.relativedelta
 
-import crunchy_main
+import crunchy_main as crm
 
 
 __version__   = sys.modules["__main__"].__version__
@@ -260,9 +260,9 @@ class CrunchyJSON(object):
                 self.userData = userData = None
                 userData.close()
 
-                crunchy_main.UI(plug=self._plug).addItem({'Title': acc_type_error,
-                                                          'mode':  'Fail'})
-                crunchy_main.UI(plug=self._plug).endofdirectory('none')
+                crm.UI(plug=self._plug).addItem({'Title': acc_type_error,
+                                                 'mode':  'Fail'})
+                crm.UI(plug=self._plug).endofdirectory('none')
 
                 return False
 
@@ -335,9 +335,9 @@ class CrunchyJSON(object):
                         self.userData = userData = None
                         userData.close()
 
-                        crunchy_main.UI(plug=self._plug).addItem({'Title': acc_type_error,
-                                                                  'mode':  'Fail'})
-                        crunchy_main.UI(plug=self._plug).endofdirectory('none')
+                        crm.UI(plug=self._plug).addItem({'Title': acc_type_error,
+                                                         'mode':  'Fail'})
+                        crm.UI(plug=self._plug).endofdirectory('none')
 
                         return False
 
@@ -436,9 +436,9 @@ class CrunchyJSON(object):
                         self.userData = userData = None
                         userData.close()
 
-                        crunchy_main.UI(plug=self._plug).addItem({'Title': acc_type_error,
-                                                                  'mode':  'Fail'})
-                        crunchy_main.UI(plug=self._plug).endofdirectory('none')
+                        crm.UI(plug=self._plug).addItem({'Title': acc_type_error,
+                                                         'mode':  'Fail'})
+                        crm.UI(plug=self._plug).endofdirectory('none')
 
                         return False
 
@@ -513,25 +513,25 @@ class CrunchyJSON(object):
                     'name' in series and
                     series['media_count'] > 0):
 
-                    crunchy_main.UI(plug=self._plug).addItem({'Title':       series['name'].encode("utf8"),
-                                                              'mode':        'list_coll',
-                                                              'series_id':    series['series_id'],
-                                                              'count':        str(series['media_count']),
-                                                              'Thumb':        thumb,
-                                                              'Fanart_Image': art,
-                                                              'plot':         description,
-                                                              'year':         year},
-                                                              True)
+                    crm.UI(plug=self._plug).addItem({'Title':       series['name'].encode("utf8"),
+                                                     'mode':        'list_coll',
+                                                     'series_id':    series['series_id'],
+                                                     'count':        str(series['media_count']),
+                                                     'Thumb':        thumb,
+                                                     'Fanart_Image': art,
+                                                     'plot':         description,
+                                                     'year':         year},
+                                                     True)
 
             if counter >= 64:
                 offset = int(offset) + counter
-                crunchy_main.UI(plug=self._plug).addItem({'Title':    '...load more',
-                                                          'mode':     'list_series',
-                                                          'showtype': media_type,
-                                                          'filterx':  filterx,
-                                                          'offset':   str(offset)})
+                crm.UI(plug=self._plug).addItem({'Title':    '...load more',
+                                                 'mode':     'list_series',
+                                                 'showtype': media_type,
+                                                 'filterx':  filterx,
+                                                 'offset':   str(offset)})
 
-        crunchy_main.UI(plug=self._plug).endofdirectory('none')
+        crm.UI(plug=self._plug).endofdirectory('none')
 
 
     def list_categories(self, title, media_type, filterx):
@@ -542,22 +542,22 @@ class CrunchyJSON(object):
             if filterx == 'genre':
                 if 'genre' in request['data']:
                     for genre in request['data']['genre']:
-                        crunchy_main.UI(plug=self._plug).addItem({'Title':    genre['label'].encode("utf8"),
-                                                                  'mode':     'list_series',
-                                                                  'showtype': media_type,
-                                                                  'filterx':  'tag:' + genre['tag']},
-                                                                  True)
+                        crm.UI(plug=self._plug).addItem({'Title':    genre['label'].encode("utf8"),
+                                                         'mode':     'list_series',
+                                                         'showtype': media_type,
+                                                         'filterx':  'tag:' + genre['tag']},
+                                                         True)
 
             if filterx == 'season':
                 if 'season' in request['data']:
                     for season in request['data']['season']:
-                        crunchy_main.UI(plug=self._plug).addItem({'Title':    season['label'].encode("utf8"),
-                                                                  'mode':     'list_series',
-                                                                  'showtype': media_type,
-                                                                  'filterx':  'tag:' + season['tag']},
-                                                                  True)
+                        crm.UI(plug=self._plug).addItem({'Title':    season['label'].encode("utf8"),
+                                                         'mode':     'list_series',
+                                                         'showtype': media_type,
+                                                         'filterx':  'tag:' + season['tag']},
+                                                         True)
 
-        crunchy_main.UI(plug=self._plug).endofdirectory('none')
+        crm.UI(plug=self._plug).endofdirectory('none')
 
 
     def list_collections(self, series_id, series_name, count, thumb, fanart):
@@ -586,20 +586,20 @@ class CrunchyJSON(object):
             else:
                 for collection in request['data']:
                     complete = '1' if collection['complete'] else '0'
-                    crunchy_main.UI(plug=self._plug).addItem({'Title':        collection['name'].encode("utf8"),
-                                                              'filterx':      series_name,
-                                                              'mode':         'list_media',
-                                                              'count':        str(count),
-                                                              'id':           collection['collection_id'],
-                                                              'plot':         collection['description'].encode("utf8"),
-                                                              'complete':     complete,
-                                                              'season':       str(collection['season']),
-                                                              'series_id':    series_id,
-                                                              'Thumb':        thumb,
-                                                              'Fanart_Image': fanart},
-                                                              True)
+                    crm.UI(plug=self._plug).addItem({'Title':        collection['name'].encode("utf8"),
+                                                     'filterx':      series_name,
+                                                     'mode':         'list_media',
+                                                     'count':        str(count),
+                                                     'id':           collection['collection_id'],
+                                                     'plot':         collection['description'].encode("utf8"),
+                                                     'complete':     complete,
+                                                     'season':       str(collection['season']),
+                                                     'series_id':    series_id,
+                                                     'Thumb':        thumb,
+                                                     'Fanart_Image': fanart},
+                                                     True)
 
-        crunchy_main.UI(plug=self._plug).endofdirectory('none')
+        crm.UI(plug=self._plug).endofdirectory('none')
 
 
     def list_media(self, collection_id, series_name, count, complete, season, fanart):
@@ -707,19 +707,19 @@ class CrunchyJSON(object):
             url = media['url']
             media_id = url.split('-')[-1]
 
-            crunchy_main.UI(plug=self._plug).addItem({'Title':        name.encode("utf8"),
-                                                      'mode':         'videoplay',
-                                                      'id':           media_id.encode("utf8"),
-                                                      'Thumb':        thumb.encode("utf8"),
-                                                      'url':          url.encode("utf8"),
-                                                      'Fanart_Image': fanart,
-                                                      'plot':         description,
-                                                      'year':         year,
-                                                      'playhead':     playhead,
-                                                      'duration':     duration},
-                                                      False)
+            crm.UI(plug=self._plug).addItem({'Title':        name.encode("utf8"),
+                                             'mode':         'videoplay',
+                                             'id':           media_id.encode("utf8"),
+                                             'Thumb':        thumb.encode("utf8"),
+                                             'url':          url.encode("utf8"),
+                                             'Fanart_Image': fanart,
+                                             'plot':         description,
+                                             'year':         year,
+                                             'playhead':     playhead,
+                                             'duration':     duration},
+                                             False)
 
-        crunchy_main.UI(plug=self._plug).endofdirectory('none')
+        crm.UI(plug=self._plug).endofdirectory('none')
 
 
     def History(self):
@@ -817,16 +817,16 @@ class CrunchyJSON(object):
                         'series_id' in series and
                         'name' in series and
                         series['media_count'] > 0):
-                        crunchy_main.UI(plug=self._plug).addItem({'Title':        series['name'].encode("utf8"),
-                                                                  'mode':         'list_coll',
-                                                                  'series_id':    series['series_id'],
-                                                                  'Thumb':        thumb,
-                                                                  'Fanart_Image': art,
-                                                                  'plot':         description,
-                                                                  'year':         year},
-                                                                  True)
+                        crm.UI(plug=self._plug).addItem({'Title':        series['name'].encode("utf8"),
+                                                         'mode':         'list_coll',
+                                                         'series_id':    series['series_id'],
+                                                         'Thumb':        thumb,
+                                                         'Fanart_Image': art,
+                                                         'plot':         description,
+                                                         'year':         year},
+                                                         True)
 
-                crunchy_main.UI(plug=self._plug).endofdirectory('none')
+                crm.UI(plug=self._plug).endofdirectory('none')
 
 
     def startPlayback(self, Title, url, media_id, playhead, duration, Thumb):
