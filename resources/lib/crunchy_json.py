@@ -985,6 +985,26 @@ class CrunchyJSON(object):
                 playlist.remove(url)
 
 
+    def pretty(self, d, indent=1):
+        """Pretty printer for dictionaries.
+
+        """
+        if isinstance(d, list):
+            for i in d:
+                self.pretty(i, indent + 1)
+        else:
+            for key, value in d.iteritems():
+                xbmc.log(' ' * 2 * indent + str(key), xbmc.LOGDEBUG)
+                if isinstance(value, (dict, list)):
+                    self.pretty(value, indent + 1)
+                else:
+                    if isinstance(value, unicode):
+                        value = value.encode('utf8')
+                    else:
+                        value = str(value)
+                    xbmc.log(' ' * 2 * (indent + 1) + value, xbmc.LOGDEBUG)
+
+
     def makeAPIRequest(self, method, options):
         if self.userData['premium_type'] in 'anime|drama|manga':
             xbmc.log("CR: makeAPIRequest: get JSON")
@@ -1003,15 +1023,26 @@ class CrunchyJSON(object):
             urllib2.install_opener(opener)
 
             url = self.userData['API_URL'] + "/" + method + ".0.json"
+
+            xbmc.log("CR: makeAPIRequest: url = %s" % url)
+            xbmc.log("CR: makeAPIRequest: options = %s" % options)
+
             req = opener.open(url, options)
             json_data = req.read()
 
             if req.headers.get('content-encoding', None) == 'gzip':
                 json_data = gzip.GzipFile(fileobj=StringIO.StringIO(json_data))
-                json_data = json_data.read().decode('utf-8','ignore')
+                json_data = json_data.read().decode('utf-8', 'ignore')
 
             req.close()
-            return json.loads(json_data)
+
+            request = json.loads(json_data)
+
+            #xbmc.log("CR: makeAPIRequest: request = %s" % str(request), xbmc.LOGDEBUG)
+            xbmc.log("CR: makeAPIRequest: reply =", xbmc.LOGDEBUG)
+            self.pretty(request)
+
+            return request
         else:
             return False
 
