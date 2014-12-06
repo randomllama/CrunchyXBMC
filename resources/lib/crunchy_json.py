@@ -877,9 +877,9 @@ class CrunchyJSON(object):
 
 
     def startPlayback(self, Title, url, media_id, playhead, duration, Thumb):
+        """Play video stream with selected quality.
 
-        # Split the URL to get the session_id & quality
-        session_id  = self.userData['session_id']
+        """
         res_quality = ['low', 'mid', 'high', 'ultra']
         quality     = res_quality[int(self._addon.getSetting("video_quality"))]
 
@@ -898,7 +898,6 @@ class CrunchyJSON(object):
         notice_msg = self._lang(30200).encode("utf8")
         setup_msg  = self._lang(30212).encode("utf8")
 
-        # Make the API call
         fields = "".join(["media.episode_number,",
                           "media.name,",
                           "media.description,",
@@ -922,8 +921,7 @@ class CrunchyJSON(object):
         item.setProperty('ResumeTime', resumetime)
 
         allurl = {}
-        playlist = xbmc.PlayList(1)
-        playlist.clear()
+        playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
 
         if request['error'] is False:
             if request['data']['stream_data'] is not None:
@@ -939,10 +937,12 @@ class CrunchyJSON(object):
                 else:
                     url = allurl['low']
 
-                playlist.add(url, item)
+                # Add to playlist stream with the selected quality
+                xbmc.log("CR: startPlayback: Add to playlist: %s" % url)
+
+                playlist.add(url, item, index=0)
                 player = xbmc.Player()
                 player.play(playlist)
-                #xbmc.Player().play(playlist)
 
                 timeplayed = 1 + int(resumetime)
                 temptimeplayed = timeplayed
@@ -961,21 +961,28 @@ class CrunchyJSON(object):
                         if x == 30:
                             x = 0
                             strTimePlayed = str(int(round(timeplayed)))
+
                             values = {'event':      'playback_status',
                                       'media_id':   media_id,
                                       'playhead':   strTimePlayed}
+
                             request = self.makeAPIRequest('log', values)
                         else:
                             x = x + 1
                         time.sleep(1)
                 except:
-                    xbmc.log("CR: startPlayback: player stopped playing")
+                    xbmc.log("CR: startPlayback: Player stopped playing")
 
                 strTimePlayed = str(int(round(timeplayed)))
                 values        = {'event':      'playback_status',
                                  'media_id':   media_id,
                                  'playhead':   strTimePlayed}
+
                 request       = self.makeAPIRequest('log', values)
+
+                xbmc.log("CR: startPlayback: Remove from playlist: %s" % url)
+
+                playlist.remove(url)
 
 
     def makeAPIRequest(self, method, options):
