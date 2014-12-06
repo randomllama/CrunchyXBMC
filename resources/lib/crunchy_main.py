@@ -263,7 +263,7 @@ class UI(object):
         self.addItem({'Title': badstuff,
                       'mode':  'Fail'})
 
-        xbmc.log("Crunchyroll takeout --> crunchy_main.py checkMode fall through")
+        xbmc.log("CR: Main: checkMode fall through", xbmc.LOGWARNING)
 
         self.endofdirectory()
 
@@ -297,6 +297,11 @@ class Main(object):
 
     def checkMode(self):
         mode = self.args.mode
+        xbmc.log("CR: Main: argv[0] = %s" % sys.argv[0])
+        xbmc.log("CR: Main: argv[1] = %s" % sys.argv[1])
+        xbmc.log("CR: Main: argv[2] = %s" % sys.argv[2])
+        xbmc.log("CR: Main: args = %s" % str(self.args.__dict__))
+        xbmc.log("CR: Main: mode = %s" % mode)
         if mode is None:
             UI().showMain()
         elif mode == 'Channels':
