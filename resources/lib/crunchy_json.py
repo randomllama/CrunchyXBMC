@@ -149,24 +149,12 @@ class CrunchyJSON(object):
 
             # Start new session
             xbmc.log("CR: Starting new session")
-            opener = urllib2.build_opener()
-            opener.addheaders = userData['API_HEADERS']
-            options = urllib.urlencode({'device_id':    userData['device_id'],
-                                        'device_type':  userData['API_DEVICE_TYPE'],
-                                        'access_token': userData['API_ACCESS_TOKEN'],
-                                        'version':      userData['API_VERSION'],
-                                        'locale':       userData['API_LOCALE']})
-            urllib2.install_opener(opener)
-            url = userData['API_URL'] + "/start_session.0.json"
-            req = opener.open(url, options)
-            json_data = req.read()
 
-            if req.headers.get('content-encoding', None) == 'gzip':
-                json_data = gzip.GzipFile(fileobj=StringIO.StringIO(json_data))
-                json_data = json_data.read().decode('utf-8', 'ignore')
+            options = {'device_id':    userData['device_id'],
+                       'device_type':  userData['API_DEVICE_TYPE'],
+                       'access_token': userData['API_ACCESS_TOKEN']}
 
-            req.close()
-            request = json.loads(json_data)
+            request = self.makeAPIRequest('start_session', options)
 
             if request['error'] is False:
                 userData['session_id']      = request['data']['session_id']
@@ -199,23 +187,10 @@ class CrunchyJSON(object):
             else:
                 xbmc.log("CR: Login in the new session")
 
-                opener = urllib2.build_opener()
-                opener.addheaders = userData['API_HEADERS']
-                options = urllib.urlencode({'session_id': userData['session_id'],
-                                            'password':   userData['password'],
-                                            'account':    userData['username'],
-                                            'version':    userData['API_VERSION'],
-                                            'locale':     userData['API_LOCALE']})
-                url = userData['API_URL'] + "/login.0.json"
-                req = opener.open(url, options)
-                json_data = req.read()
+                options = {'password':   userData['password'],
+                           'account':    userData['username']}
 
-                if req.headers.get('content-encoding', None) == 'gzip':
-                    json_data = gzip.GzipFile(fileobj=StringIO.StringIO(json_data))
-                    json_data = json_data.read().decode('utf-8', 'ignore')
-
-                req.close()
-                request = json.loads(json_data)
+                request = self.makeAPIRequest('login', options)
 
                 if request['error'] is False:
                     userData['auth_token']   = request['data']['auth']
@@ -276,24 +251,12 @@ class CrunchyJSON(object):
             xbmc.log("CR: Valid auth token was detected."
                      + " Restarting session.")
 
-            opener  = urllib2.build_opener()
-            options = urllib.urlencode({'device_id':    userData["device_id"],
-                                        'device_type':  userData['API_DEVICE_TYPE'],
-                                        'access_token': userData['API_ACCESS_TOKEN'],
-                                        'version':      userData['API_VERSION'],
-                                        'locale':       userData['API_LOCALE'],
-                                        'auth':         userData['auth_token']})
-            urllib2.install_opener(opener)
-            url = userData['API_URL'] + "/start_session.0.json"
-            req = opener.open(url, options)
-            json_data = req.read()
+            options = {'device_id':    userData["device_id"],
+                       'device_type':  userData['API_DEVICE_TYPE'],
+                       'access_token': userData['API_ACCESS_TOKEN'],
+                       'auth':         userData['auth_token']}
 
-            if req.headers.get('content-encoding', None) == 'gzip':
-                json_data = gzip.GzipFile(fileobj=StringIO.StringIO(json_data))
-                json_data = json_data.read().decode('utf-8', 'ignore')
-
-            req.close()
-            request = json.loads(json_data)
+            request = self.makeAPIRequest('start_session', options)
 
             try:
                 if request['error'] is False:
@@ -941,28 +904,10 @@ class CrunchyJSON(object):
                           "media.description,",
                           "media.url,",
                           "media.stream_data"])
-        values = {'session_id': self.userData['session_id'],
-                  'version':    self.userData['API_VERSION'],
-                  'locale':     self.userData['API_LOCALE'],
-                  'media_id':   media_id,
+        values = {'media_id':   media_id,
                   'fields':     fields}
 
-        opener = urllib2.build_opener()
-        opener.addheaders = self.userData['API_HEADERS']
-
-        options = urllib.urlencode(values)
-        urllib2.install_opener(opener)
-
-        url = self.userData['API_URL'] + "/info.0.json"
-        req = opener.open(url, options)
-        json_data = req.read()
-
-        if req.headers.get('content-encoding', None) == 'gzip':
-            json_data = gzip.GzipFile(fileobj=StringIO.StringIO(json_data))
-            json_data= json_data.read().decode('utf-8','ignore')
-
-        req.close()
-        request = json.loads(json_data)
+        request = self.makeAPIRequest('info', values)
 
         if int(resumetime) > 0:
             playcount = 0
@@ -1016,11 +961,8 @@ class CrunchyJSON(object):
                         if x == 30:
                             x = 0
                             strTimePlayed = str(int(round(timeplayed)))
-                            values = {'session_id': session_id,
-                                      'event':      'playback_status',
-                                      'locale':     self.userData['API_LOCALE'],
+                            values = {'event':      'playback_status',
                                       'media_id':   media_id,
-                                      'version':    '221',
                                       'playhead':   strTimePlayed}
                             request = self.makeAPIRequest('log', values)
                         else:
@@ -1030,11 +972,8 @@ class CrunchyJSON(object):
                     xbmc.log("CR: startPlayback: player stopped playing")
 
                 strTimePlayed = str(int(round(timeplayed)))
-                values        = {'session_id': session_id,
-                                 'event':      'playback_status',
-                                 'locale':     self.userData['API_LOCALE'],
+                values        = {'event':      'playback_status',
                                  'media_id':   media_id,
-                                 'version':    '221',
                                  'playhead':   strTimePlayed}
                 request       = self.makeAPIRequest('log', values)
 
@@ -1043,9 +982,11 @@ class CrunchyJSON(object):
         if self.userData['premium_type'] in 'anime|drama|manga':
             xbmc.log("CR: makeAPIRequest: get JSON")
 
-            values = {'session_id': self.userData['session_id'],
-                      'version':    self.userData['API_VERSION'],
+            values = {'version':    self.userData['API_VERSION'],
                       'locale':     self.userData['API_LOCALE']}
+
+            if method != 'start_session':
+                values['session_id'] = self.userData['session_id']
 
             values.update(options)
             options = urllib.urlencode(values)
