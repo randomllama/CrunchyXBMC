@@ -22,8 +22,8 @@ import xbmcaddon
 _plugId = 'plugin.video.crunchyroll-takeout'
 
 # Plugin constants
-__plugin__    = "Crunchyrollxbmc"
-__version__   = "2.1.0"
+__plugin__    = "Crunchyroll"
+__version__   = "2.1.1"
 __XBMCBUILD__ = xbmc.getInfoLabel("System.BuildVersion")
 __settings__  = xbmcaddon.Addon(id=_plugId)
 __language__  = __settings__.getLocalizedString
