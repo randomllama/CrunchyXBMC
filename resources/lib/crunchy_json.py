@@ -914,6 +914,10 @@ class CrunchyJSON(object):
 
         request = self.makeAPIRequest('info', values)
 
+        if request['error']:
+            xbmc.log("CR: startPlayback: Connection failed, aborting..")
+            sys.exit(1)
+
         if int(resumetime) > 0:
             playcount = 0
         else:
