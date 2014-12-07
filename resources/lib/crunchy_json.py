@@ -960,14 +960,15 @@ class CrunchyJSON(object):
 
                 timeplayed = 1 + int(resumetime)
                 temptimeplayed = timeplayed
-                time.sleep(5)
+                xbmc.sleep(1)
 
+                if timeplayed < 60:
+                    playback_resume = False
+                if playback_resume is True:
+                    xbmc.Player().seekTime(float(resumetime))
                 x = 0                
                 try:
-                    if timeplayed < 60:
-                        playback_resume = False
-                    if playback_resume is True:
-                        xbmc.Player().seekTime(float(resumetime))
+                    
                     while player.isPlaying:
                         temptimeplayed = player.getTime()
                         timeplayed     = temptimeplayed
@@ -982,7 +983,7 @@ class CrunchyJSON(object):
                             request = self.makeAPIRequest('log', values)
                         else:
                             x = x + 1
-                        time.sleep(30)
+                        xbmc.sleep(10)
                 except RuntimeError as e:
                     xbmc.log("CR: startPlayback: Player stopped playing: %r" % e)
 
