@@ -250,9 +250,7 @@ class UI(object):
 
     def startVideo(self):
         crj.CrunchyJSON().startPlayback(self.main.args.name,
-                                        self.main.args.url,
                                         self.main.args.id,
-                                        self.main.args.playhead,
                                         self.main.args.duration,
                                         self.main.args.icon)
 

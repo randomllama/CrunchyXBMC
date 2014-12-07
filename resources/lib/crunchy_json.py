@@ -886,12 +886,28 @@ class CrunchyJSON(object):
                 crm.UI().endofdirectory('none')
 
 
-    def startPlayback(self, Title, url, media_id, playhead, duration, Thumb):
+    def startPlayback(self, Title, media_id, duration, Thumb):
         """Play video stream with selected quality.
 
         """
         res_quality = ['low', 'mid', 'high', 'ultra']
         quality     = res_quality[int(self._addon.getSetting("video_quality"))]
+
+        fields = "".join(["media.episode_number,",
+                          "media.name,",
+                          "media.playhead,",
+                          "media.description,",
+                          "media.url,",
+                          "media.stream_data"])
+
+        values = {'media_id': media_id,
+                  'fields':   fields}
+
+        request = self.makeAPIRequest('info', values)
+
+        if request['error']:
+            xbmc.log("CR: startPlayback: Connection failed, aborting..")
+            sys.exit(1)
 
         if self._addon.getSetting("playback_resume") == 'true':
             playback_resume = True
@@ -901,26 +917,7 @@ class CrunchyJSON(object):
         if playback_resume is not True:
             resumetime = "0"
         else:
-            resumetime = playhead
-
-        totaltime = duration
-
-        notice_msg = self._lang(30200).encode("utf8")
-        setup_msg  = self._lang(30212).encode("utf8")
-
-        fields = "".join(["media.episode_number,",
-                          "media.name,",
-                          "media.description,",
-                          "media.url,",
-                          "media.stream_data"])
-        values = {'media_id':   media_id,
-                  'fields':     fields}
-
-        request = self.makeAPIRequest('info', values)
-
-        if request['error']:
-            xbmc.log("CR: startPlayback: Connection failed, aborting..")
-            sys.exit(1)
+            resumetime = str(request['data']['playhead'])
 
         if int(resumetime) > 0:
             playcount = 0
@@ -931,7 +928,7 @@ class CrunchyJSON(object):
         item.setInfo(type="Video", infoLabels={"Title":     Title,
                                                "playcount": playcount})
         item.setThumbnailImage(Thumb)
-        item.setProperty('TotalTime', totaltime)
+        item.setProperty('TotalTime',  duration)
         item.setProperty('ResumeTime', resumetime)
 
         allurl = {}
@@ -958,41 +955,35 @@ class CrunchyJSON(object):
                 player = xbmc.Player()
                 player.play(playlist)
 
-                timeplayed = 1 + int(resumetime)
-                temptimeplayed = timeplayed
+                timeplayed = resumetime
                 xbmc.sleep(1)
 
-                if timeplayed < 60:
+                if int(resumetime) <= 60:
                     playback_resume = False
-                if playback_resume is True:
-                    xbmc.Player().seekTime(float(resumetime))
-                x = 0                
+
                 try:
-                    
+                    if playback_resume is True:
+                        player.seekTime(float(resumetime))
+
                     while player.isPlaying:
-                        temptimeplayed = player.getTime()
-                        timeplayed     = temptimeplayed
-                        if x == 30:
-                            x = 0
-                            strTimePlayed = str(int(round(timeplayed)))
+                        timeplayed = str(int(player.getTime()))
 
-                            values = {'event':      'playback_status',
-                                      'media_id':   media_id,
-                                      'playhead':   strTimePlayed}
+                        values = {'event':      'playback_status',
+                                  'media_id':   media_id,
+                                  'playhead':   timeplayed}
 
-                            request = self.makeAPIRequest('log', values)
-                        else:
-                            x = x + 1
-                        xbmc.sleep(10)
+                        request = self.makeAPIRequest('log', values)
+
+                        xbmc.sleep(5000)
+
                 except RuntimeError as e:
                     xbmc.log("CR: startPlayback: Player stopped playing: %r" % e)
 
-                strTimePlayed = str(int(round(timeplayed)))
-                values        = {'event':      'playback_status',
-                                 'media_id':   media_id,
-                                 'playhead':   strTimePlayed}
+                values  = {'event':    'playback_status',
+                           'media_id': media_id,
+                           'playhead': timeplayed}
 
-                request       = self.makeAPIRequest('log', values)
+                request = self.makeAPIRequest('log', values)
 
                 xbmc.log("CR: startPlayback: Remove from playlist: %s" % url)
 
