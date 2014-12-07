@@ -21,7 +21,6 @@ import re
 import sys
 import json
 import gzip
-import time
 import random
 import shelve
 import string
@@ -953,7 +952,7 @@ class CrunchyJSON(object):
 
                 timeplayed = 1 + int(resumetime)
                 temptimeplayed = timeplayed
-                time.sleep(1)
+                xbmc.sleep(1)
 
                 if timeplayed < 60:
                     playback_resume = False
@@ -976,7 +975,7 @@ class CrunchyJSON(object):
                             request = self.makeAPIRequest('log', values)
                         else:
                             x = x + 1
-                        time.sleep(1)
+                        xbmc.sleep(1)
                 except:
                     xbmc.log("CR: startPlayback: Player stopped playing")
 
