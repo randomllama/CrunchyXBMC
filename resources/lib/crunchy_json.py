@@ -658,7 +658,8 @@ class CrunchyJSON(object):
             media = media['most_likely_media'] if mode == "queue" else media
 
             current_datetime   = datetime.datetime.now(dateutil.tz.tzutc())
-            available_datetime = dateutil.parser.parse(media['available_time']).astimezone(dateutil.tz.tzlocal())
+            available_datetime = dateutil.parser.parse(media['available_time'])
+            available_datetime = available_datetime.astimezone(dateutil.tz.tzlocal())
             available_date     = available_datetime.date()
             available_delta    = available_datetime - current_datetime
             available_in       = (str(available_delta.days) + " days."
@@ -1018,7 +1019,7 @@ class CrunchyJSON(object):
 
 
     def makeAPIRequest(self, method, options):
-        if self.userData['premium_type'] in 'anime|drama|manga':
+        if self.userData['premium_type'] in 'anime|drama|manga|UNKNOWN':
             xbmc.log("CR: makeAPIRequest: get JSON")
 
             values = {'version':    self.userData['API_VERSION'],
