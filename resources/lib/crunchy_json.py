@@ -962,7 +962,7 @@ class CrunchyJSON(object):
                 x = 0
                 try:
                     while player.isPlaying:
-                        temptimeplayed = xbmc.Player().getTime()
+                        temptimeplayed = player.getTime()
                         timeplayed     = temptimeplayed
                         if x == 30:
                             x = 0
