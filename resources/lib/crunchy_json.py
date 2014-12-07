@@ -976,8 +976,8 @@ class CrunchyJSON(object):
                         else:
                             x = x + 1
                         xbmc.sleep(1)
-                except:
-                    xbmc.log("CR: startPlayback: Player stopped playing")
+                except RuntimeError as e:
+                    xbmc.log("CR: startPlayback: Player stopped playing: %r" % e)
 
                 strTimePlayed = str(int(round(timeplayed)))
                 values        = {'event':      'playback_status',
