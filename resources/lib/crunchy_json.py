@@ -23,8 +23,10 @@ import json
 import gzip
 import random
 import shelve
+import socket
 import string
 import urllib
+import httplib
 import urllib2
 import datetime
 import StringIO
@@ -1037,27 +1039,51 @@ class CrunchyJSON(object):
             xbmc.log("CR: makeAPIRequest: url = %s" % url)
             xbmc.log("CR: makeAPIRequest: options = %s" % options)
 
-            req = opener.open(url, options)
-            json_data = req.read()
 
-            if req.headers.get('content-encoding', None) == 'gzip':
-                json_data = gzip.GzipFile(fileobj=StringIO.StringIO(json_data))
-                json_data = json_data.read().decode('utf-8', 'ignore')
+            try:
+                request = None
 
-            req.close()
+                req = opener.open(url, options)
+                json_data = req.read()
 
-            request = json.loads(json_data)
+                if req.headers.get('content-encoding', None) == 'gzip':
+                    json_data = gzip.GzipFile(fileobj=StringIO.StringIO(json_data))
+                    json_data = json_data.read().decode('utf-8', 'ignore')
+
+                req.close()
+
+                request = json.loads(json_data)
+
+            except (httplib.BadStatusLine,
+                    socket.error,
+                    urllib2.HTTPError) as e:
+
+                xbmc.log("CR: makeAPIRequest: Connection failed: %r" % e,
+                         xbmc.LOGERROR)
+
+                en, ev = sys.exc_info()[:2]
+            finally:
+                # Return dummy response if connection failed
+                if request is None:
+                    request = {'code':    'error',
+                               'message': "Connection failed: %r, %r" % (en, ev),
+                               'error':   True}
 
             #xbmc.log("CR: makeAPIRequest: request = %s" % str(request), xbmc.LOGDEBUG)
             xbmc.log("CR: makeAPIRequest: reply =", xbmc.LOGDEBUG)
             self.pretty(request)
 
-            return request
         else:
             pt = self.userData['premium_type']
-            return {'code':    'error',
-                    'message': "Premium type check failed, premium_type: %s" % pt,
-                    'error':   True}
+            s  = "Premium type check failed, premium_type:"
+
+            request = {'code':    'error',
+                       'message': "%s %s" % (s, pt),
+                       'error':   True}
+
+            xbmc.log("CR: makeAPIRequest: %s %s" % (s, pt), xbmc.LOGERROR)
+
+        return request
 
 
     def changeLocale(self):
