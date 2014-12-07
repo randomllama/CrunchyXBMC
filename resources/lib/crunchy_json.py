@@ -1044,7 +1044,10 @@ class CrunchyJSON(object):
 
             return request
         else:
-            return False
+            pt = self.userData['premium_type']
+            return {'code':    'error',
+                    'message': "Premium type check failed, premium_type: %s" % pt,
+                    'error':   True}
 
 
     def changeLocale(self):
@@ -1112,7 +1115,9 @@ class CrunchyJSON(object):
     def usage_reporting(self):
         xbmc.log("CR: Attempting to report usage")
 
-        url  = 'https://docs.google.com/forms/d/1_qB4UznRfx69JrGCYmKbbeQcFc_t2-9fuNvXGGvl8mk/formResponse'
+        url  = ''.join(['https://docs.google.com/forms/d',
+                        '/1_qB4UznRfx69JrGCYmKbbeQcFc_t2-9fuNvXGGvl8mk',
+                        '/formResponse'])
         data = urllib.urlencode({'entry_1580743010': self.userData['device_id'],
                                  'entry_623948459':  self.userData['premium_type'],
                                  'entry_1130326797': __version__,
