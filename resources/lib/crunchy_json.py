@@ -63,21 +63,25 @@ class CrunchyJSON(object):
 
 
     def loadShelf(self):
+        notice_msg     = self._lang(30200).encode("utf8")
+        setup_msg      = self._lang(30203).encode("utf8")
+        acc_type_error = self._lang(30312).encode("utf8")
+
+        change_language = self._addon.getSetting("change_language")
+
+        self.base_path = xbmc.translatePath(self._addon.getAddonInfo('profile')).decode('utf-8')
+
+        self.base_cache_path = os.path.join(self.base_path, "cache")
+        if not os.path.exists(self.base_cache_path):
+            os.makedirs(self.base_cache_path)
+
+        shelf_path = os.path.join(self.base_path, "cruchyXBMC")
+
+        current_datetime = datetime.datetime.now(dateutil.tz.tzutc())
+
         try:
-            self.base_path = xbmc.translatePath(self._addon.getAddonInfo('profile')).decode('utf-8')
-            self.base_cache_path = os.path.join(self.base_path, "cache")
-            if not os.path.exists(self.base_cache_path):
-                os.makedirs(self.base_cache_path)
-            shelf_path = os.path.join(self.base_path, "cruchyXBMC")
-
             # Load persistent vars
-            userData     = shelve.open(shelf_path, writeback=True)
-
-            notice_msg     = self._lang(30200).encode("utf8")
-            setup_msg      = self._lang(30203).encode("utf8")
-            acc_type_error = self._lang(30312).encode("utf8")
-
-            change_language = self._addon.getSetting("change_language")
+            userData = shelve.open(shelf_path, writeback=True)
 
             if change_language == "0":
                 userData.setdefault('API_LOCALE',"enUS")
@@ -122,19 +126,22 @@ class CrunchyJSON(object):
             userData['API_DEVICE_TYPE']  = "com.crunchyroll.ps3"
 
             userData.setdefault('premium_type', 'UNKNOWN')
-            current_datetime = datetime.datetime.now(dateutil.tz.tzutc())
-            userData.setdefault('lastreported', (current_datetime - durel.relativedelta(hours = +24)))
+            userData.setdefault('lastreported', (current_datetime -
+                                                 durel.relativedelta(hours = +24)))
             self.userData = userData
 
         except:
             xbmc.log("CR: Unexpected error:", sys.exc_info(), xbmc.LOGERROR)
 
             userData['session_id']      = ''
-            userData['auth_expires']    = current_datetime - durel.relativedelta(hours = +24)
-            userData['lastreported']    = current_datetime - durel.relativedelta(hours = +24)
+            userData['auth_expires']    = (current_datetime -
+                                           durel.relativedelta(hours = +24))
+            userData['lastreported']    = (current_datetime -
+                                           durel.relativedelta(hours = +24))
             userData['premium_type']    = 'UNKNOWN'
             userData['auth_token']      = ''
-            userData['session_expires'] = current_datetime - durel.relativedelta(hours = +24)
+            userData['session_expires'] = (current_datetime -
+                                           durel.relativedelta(hours = +24))
 
             self.userData = userData
             userData.close()
