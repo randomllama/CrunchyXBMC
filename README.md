@@ -14,4 +14,4 @@ You MUST be a Crunchyroll Premium Member!
 
 Thanks to the following for code:
 
-maruchan, Voinage, Zehd, mattrk, and le__
+maruchan, Reinis, Voinage, Zehd, mattrk, and le__
