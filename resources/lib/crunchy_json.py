@@ -21,11 +21,12 @@ import re
 import sys
 import json
 import gzip
-import time
 import random
 import shelve
+import socket
 import string
 import urllib
+import httplib
 import urllib2
 import datetime
 import StringIO
@@ -63,21 +64,25 @@ class CrunchyJSON(object):
 
 
     def loadShelf(self):
+        notice_msg     = self._lang(30200).encode("utf8")
+        setup_msg      = self._lang(30203).encode("utf8")
+        acc_type_error = self._lang(30312).encode("utf8")
+
+        change_language = self._addon.getSetting("change_language")
+
+        self.base_path = xbmc.translatePath(self._addon.getAddonInfo('profile')).decode('utf-8')
+
+        self.base_cache_path = os.path.join(self.base_path, "cache")
+        if not os.path.exists(self.base_cache_path):
+            os.makedirs(self.base_cache_path)
+
+        shelf_path = os.path.join(self.base_path, "cruchyXBMC")
+
+        current_datetime = datetime.datetime.now(dateutil.tz.tzutc())
+
         try:
-            self.base_path = xbmc.translatePath(self._addon.getAddonInfo('profile')).decode('utf-8')
-            self.base_cache_path = os.path.join(self.base_path, "cache")
-            if not os.path.exists(self.base_cache_path):
-                os.makedirs(self.base_cache_path)
-            shelf_path = os.path.join(self.base_path, "cruchyXBMC")
-
             # Load persistent vars
-            userData     = shelve.open(shelf_path, writeback=True)
-
-            notice_msg     = self._lang(30200).encode("utf8")
-            setup_msg      = self._lang(30203).encode("utf8")
-            acc_type_error = self._lang(30312).encode("utf8")
-
-            change_language = self._addon.getSetting("change_language")
+            userData = shelve.open(shelf_path, writeback=True)
 
             if change_language == "0":
                 userData.setdefault('API_LOCALE',"enUS")
@@ -107,8 +112,8 @@ class CrunchyJSON(object):
                 char_set  = string.ascii_letters + string.digits
                 device_id = ''.join(random.sample(char_set, 32))
                 userData["device_id"] = device_id
-                xbmc.log("Crunchyroll;xbmc ----> New device_id created."
-                         + " New device_id is: " + str(device_id))
+                xbmc.log("CR: New device_id created."
+                         + " New device ID: " + str(device_id))
 
             userData['API_HEADERS'] = [('User-Agent',      "Mozilla/5.0 (PLAYSTATION 3; 4.46)"),
                                        ('Host',            "api.crunchyroll.com"),
@@ -122,23 +127,26 @@ class CrunchyJSON(object):
             userData['API_DEVICE_TYPE']  = "com.crunchyroll.ps3"
 
             userData.setdefault('premium_type', 'UNKNOWN')
-            current_datetime = datetime.datetime.now(dateutil.tz.tzutc())
-            userData.setdefault('lastreported', (current_datetime - durel.relativedelta(hours = +24)))
+            userData.setdefault('lastreported', (current_datetime -
+                                                 durel.relativedelta(hours = +24)))
             self.userData = userData
 
         except:
-            xbmc.log("Unexpected error:", sys.exc_info())
+            xbmc.log("CR: Unexpected error:", sys.exc_info(), xbmc.LOGERROR)
 
             userData['session_id']      = ''
-            userData['auth_expires']    = current_datetime - durel.relativedelta(hours = +24)
-            userData['lastreported']    = current_datetime - durel.relativedelta(hours = +24)
+            userData['auth_expires']    = (current_datetime -
+                                           durel.relativedelta(hours = +24))
+            userData['lastreported']    = (current_datetime -
+                                           durel.relativedelta(hours = +24))
             userData['premium_type']    = 'UNKNOWN'
             userData['auth_token']      = ''
-            userData['session_expires'] = current_datetime - durel.relativedelta(hours = +24)
+            userData['session_expires'] = (current_datetime -
+                                           durel.relativedelta(hours = +24))
 
             self.userData = userData
             userData.close()
-            xbmc.log("Crunchyroll -> Unable to Load shelve")
+            xbmc.log("CR: Unable to load shelve")
             return False
 
         # Check to see if a session_id doesn't exist or if the current
@@ -148,25 +156,13 @@ class CrunchyJSON(object):
             current_datetime > userData['auth_expires']):
 
             # Start new session
-            xbmc.log("Crunchyroll;xbmc ----> Starting new session")
-            opener = urllib2.build_opener()
-            opener.addheaders = userData['API_HEADERS']
-            options = urllib.urlencode({'device_id':    userData['device_id'],
-                                        'device_type':  userData['API_DEVICE_TYPE'],
-                                        'access_token': userData['API_ACCESS_TOKEN'],
-                                        'version':      userData['API_VERSION'],
-                                        'locale':       userData['API_LOCALE']})
-            urllib2.install_opener(opener)
-            url = userData['API_URL'] + "/start_session.0.json"
-            req = opener.open(url, options)
-            json_data = req.read()
+            xbmc.log("CR: Starting new session")
 
-            if req.headers.get('content-encoding', None) == 'gzip':
-                json_data = gzip.GzipFile(fileobj=StringIO.StringIO(json_data))
-                json_data = json_data.read().decode('utf-8', 'ignore')
+            options = {'device_id':    userData['device_id'],
+                       'device_type':  userData['API_DEVICE_TYPE'],
+                       'access_token': userData['API_ACCESS_TOKEN']}
 
-            req.close()
-            request = json.loads(json_data)
+            request = self.makeAPIRequest('start_session', options)
 
             if request['error'] is False:
                 userData['session_id']      = request['data']['session_id']
@@ -174,17 +170,18 @@ class CrunchyJSON(object):
                                                durel.relativedelta(hours = +4))
                 userData['test_session']    = current_datetime
 
-                xbmc.log("Crunchyroll.bundle ----> New session created!"
-                         + " Session ID is: " + str(userData['session_id']))
+                xbmc.log("CR: New session created!"
+                         + " Session ID: " + str(userData['session_id']))
 
             elif request['error'] is True:
-                xbmc.log("Crunchyroll.bundle ----> Error starting new session."
-                         + " Error message is: " + str(request['message']))
+                xbmc.log("CR: Error starting new session."
+                         + " Error message: " + str(request['message']),
+                         xbmc.LOGERROR)
                 return False
 
             # Login the session we just started
             if not userData['username'] or not userData['password']:
-                xbmc.log("Crunchyroll.bundle ----> No Username or Password set")
+                xbmc.log("CR: No username or password set")
 
                 self.userData = userData
                 userData.close()
@@ -192,29 +189,16 @@ class CrunchyJSON(object):
                 ex = 'XBMC.Notification("' + notice_msg + ':","' \
                      + setup_msg + '.", 3000)'
                 xbmc.executebuiltin(ex)
-                xbmc.log("crunchyroll-takeout -> NO CRUNCHYROLL ACCOUNT FOUND!")
+                xbmc.log("CR: No Crunchyroll account found!", xbmc.LOGERROR)
                 return False
 
             else:
-                xbmc.log("Crunchyroll.bundle ----> Logging in the new session we just created.")
+                xbmc.log("CR: Login in the new session")
 
-                opener = urllib2.build_opener()
-                opener.addheaders = userData['API_HEADERS']
-                options = urllib.urlencode({'session_id': userData['session_id'],
-                                            'password':   userData['password'],
-                                            'account':    userData['username'],
-                                            'version':    userData['API_VERSION'],
-                                            'locale':     userData['API_LOCALE']})
-                url = userData['API_URL'] + "/login.0.json"
-                req = opener.open(url, options)
-                json_data = req.read()
+                options = {'password':   userData['password'],
+                           'account':    userData['username']}
 
-                if req.headers.get('content-encoding', None) == 'gzip':
-                    json_data = gzip.GzipFile(fileobj=StringIO.StringIO(json_data))
-                    json_data = json_data.read().decode('utf-8', 'ignore')
-
-                req.close()
-                request = json.loads(json_data)
+                request = self.makeAPIRequest('login', options)
 
                 if request['error'] is False:
                     userData['auth_token']   = request['data']['auth']
@@ -223,12 +207,12 @@ class CrunchyJSON(object):
                                                     if request['data']['user']['premium'] == ''
                                                     else request['data']['user']['premium'])
 
-                    xbmc.log("Crunchyroll.bundle ----> Login successful.")
+                    xbmc.log("CR: Login successful")
 
                 elif request['error'] is True:
-                    xbmc.log("Crunchyroll.bundle ----> Error logging in"
-                             + " new session. Error message was: "
-                             + str(request['message']))
+                    xbmc.log("CR: Error logging in new session."
+                             + " Error message: "
+                             + str(request['message']), xbmc.LOGERROR)
 
                     self.userData = userData
                     userData.close()
@@ -243,15 +227,15 @@ class CrunchyJSON(object):
 
             # Verify user is premium
             if userData['premium_type'] in 'anime|drama|manga':
-                xbmc.log("Crunchyroll.bundle ----> User is a premium "
-                         + str(userData['premium_type']) + " member.")
+                xbmc.log("CR: User is a premium "
+                         + str(userData['premium_type']) + " member")
 
                 self.userData = userData
                 userData.close()
                 return True
 
             else:
-                xbmc.log("Crunchyroll.bundle ----> User is not premium.")
+                xbmc.log("CR: User is not a premium member")
                 xbmc.executebuiltin('Notification(' + notice_msg + ',' +
                                     acc_type_error + ',5000)')
 
@@ -272,27 +256,15 @@ class CrunchyJSON(object):
               current_datetime > userData['session_expires']):
 
             # Re-start new session
-            xbmc.log("Crunchyroll.bundle ----> Valid auth token was detected."
+            xbmc.log("CR: Valid auth token was detected."
                      + " Restarting session.")
 
-            opener  = urllib2.build_opener()
-            options = urllib.urlencode({'device_id':    userData["device_id"],
-                                        'device_type':  userData['API_DEVICE_TYPE'],
-                                        'access_token': userData['API_ACCESS_TOKEN'],
-                                        'version':      userData['API_VERSION'],
-                                        'locale':       userData['API_LOCALE'],
-                                        'auth':         userData['auth_token']})
-            urllib2.install_opener(opener)
-            url = userData['API_URL'] + "/start_session.0.json"
-            req = opener.open(url, options)
-            json_data = req.read()
+            options = {'device_id':    userData["device_id"],
+                       'device_type':  userData['API_DEVICE_TYPE'],
+                       'access_token': userData['API_ACCESS_TOKEN'],
+                       'auth':         userData['auth_token']}
 
-            if req.headers.get('content-encoding', None) == 'gzip':
-                json_data = gzip.GzipFile(fileobj=StringIO.StringIO(json_data))
-                json_data = json_data.read().decode('utf-8', 'ignore')
-
-            req.close()
-            request = json.loads(json_data)
+            request = self.makeAPIRequest('start_session', options)
 
             try:
                 if request['error'] is False:
@@ -307,8 +279,8 @@ class CrunchyJSON(object):
                                                    durel.relativedelta(hours = +4))
                     userData['test_session']    = current_datetime
 
-                    xbmc.log("Crunchyroll.bundle ----> Session restart"
-                             + " successful. New session_id is: "
+                    xbmc.log("CR: Session restart successful."
+                             + " Session ID: "
                              + str(userData['session_id']))
 
                     # Call for usage reporting
@@ -320,15 +292,15 @@ class CrunchyJSON(object):
 
                     # Verify user is premium
                     if userData['premium_type'] in 'anime|drama|manga':
-                        xbmc.log("Crunchyroll.bundle ----> User is a premium "
-                                 + str(userData['premium_type']) + " member.")
+                        xbmc.log("CR: User is a premium "
+                                 + str(userData['premium_type']) + " member")
 
                         self.userData = userData
                         userData.close()
                         return True
 
                     else:
-                        xbmc.log("Crunchyroll.bundle ----> User is not premium.")
+                        xbmc.log("CR: User is not a premium member")
                         xbmc.executebuiltin('Notification(' + notice_msg + ','
                                             + acc_type_error + ',5000)')
 
@@ -349,9 +321,9 @@ class CrunchyJSON(object):
                     del userData['auth_token']
                     del userData['session_expires']
 
-                    xbmc.log("Crunchyroll.bundle ----> Error restarting"
-                             + " session. Error message was: "
-                             + str(request['message']))
+                    xbmc.log("CR: Error restarting session."
+                             + " Error message: "
+                             + str(request['message']), xbmc.LOGERROR)
 
                     self.userData = userData
                     userData.Save()
@@ -364,8 +336,9 @@ class CrunchyJSON(object):
                 userData['auth_token']      = ''
                 userData['session_expires'] = current_datetime - durel.relativedelta(hours = +24)
 
-                xbmc.log("Crunchyroll.bundle ----> Error restarting session."
-                         + " Error message was: " + str(request['message']))
+                xbmc.log("CR: Error restarting session."
+                         + " Error message: "
+                         + str(request['message']), xbmc.LOGERROR)
 
                 self.userData = userData
                 userData.Save()
@@ -408,8 +381,8 @@ class CrunchyJSON(object):
                 request = self.makeAPIRequest('queue', options)
 
                 if request['error'] is False:
-                    xbmc.log("Crunchyroll.bundle ----> A valid session was"
-                             + " detected. Using existing session_id of: "
+                    xbmc.log("CR: A valid session was detected."
+                             + " Using existing session ID: "
                              + str(userData['session_id']))
 
                     # Call for usage reporting
@@ -421,15 +394,15 @@ class CrunchyJSON(object):
 
                     # Verify user is premium
                     if userData['premium_type'] in 'anime|drama|manga':
-                        xbmc.log("Crunchyroll.bundle ----> User is a premium "
-                                 + str(userData['premium_type']) + " member.")
+                        xbmc.log("CR: User is a premium "
+                                 + str(userData['premium_type']) + " member")
 
                         self.userData = userData
                         userData.close()
                         return True
 
                     else:
-                        xbmc.log("Crunchyroll.bundle ----> User is not premium.")
+                        xbmc.log("CR: User is not a premium member")
                         xbmc.executebuiltin('Notification(' + notice_msg + ','
                                             + acc_type_error + ',5000)')
 
@@ -443,8 +416,7 @@ class CrunchyJSON(object):
                         return False
 
                 elif request['error'] is True:
-                    xbmc.log("Crunchyroll.bundle ----> Something in the login"
-                             + " process went wrong.")
+                    xbmc.log("CR: Something in the login process went wrong!")
 
                     del userData['session_id']
                     del userData['auth_expires']
@@ -466,8 +438,7 @@ class CrunchyJSON(object):
             del userData['auth_token']
             del userData['session_expires']
 
-            xbmc.log("Crunchyroll.bundle ----> Something in the login"
-                     + " process went wrong.")
+            xbmc.log("CR: Something in the login process went wrong!")
 
             self.userData = userData
             userData.close()
@@ -492,6 +463,7 @@ class CrunchyJSON(object):
                    'fields':     fields,
                    'limit':      '64',
                    'offset':     int(offset)}
+
         request = self.makeAPIRequest('list_series', options)
 
         if request['error'] is False:
@@ -588,6 +560,7 @@ class CrunchyJSON(object):
                    'fields':    fields,
                    'sort':      'desc',
                    'limit':     count}
+
         request = self.makeAPIRequest('list_collections', options)
 
         if request['error'] is False:
@@ -642,6 +615,7 @@ class CrunchyJSON(object):
                    'fields':        fields,
                    'sort':          sort,
                    'limit':         '256'}
+
         request = self.makeAPIRequest('list_media', options)
 
         if request['error'] is False:
@@ -804,6 +778,7 @@ class CrunchyJSON(object):
         options = {'media_types': "anime|drama",
                    'fields':      fields,
                    'limit':       '256'}
+
         request = self.makeAPIRequest('recently_watched', options)
 
         if request['error'] is False:
@@ -837,6 +812,7 @@ class CrunchyJSON(object):
                                "image.full_url"])
             options = {'media_types': "anime|drama",
                        'fields':      fields}
+
             request = self.makeAPIRequest('queue', options)
 
             if request['error'] is False:
@@ -861,6 +837,7 @@ class CrunchyJSON(object):
                                "image.full_url"])
             options = {'media_types': "anime|drama",
                        'fields':      fields}
+
             request = self.makeAPIRequest('queue', options)
 
             if request['error'] is False:
@@ -908,9 +885,9 @@ class CrunchyJSON(object):
 
 
     def startPlayback(self, Title, url, media_id, playhead, duration, Thumb):
+        """Play video stream with selected quality.
 
-        # Split the URL to get the session_id & quality
-        session_id  = self.userData['session_id']
+        """
         res_quality = ['low', 'mid', 'high', 'ultra']
         quality     = res_quality[int(self._addon.getSetting("video_quality"))]
 
@@ -929,34 +906,19 @@ class CrunchyJSON(object):
         notice_msg = self._lang(30200).encode("utf8")
         setup_msg  = self._lang(30212).encode("utf8")
 
-        # Make the API call
         fields = "".join(["media.episode_number,",
                           "media.name,",
                           "media.description,",
                           "media.url,",
                           "media.stream_data"])
-        values = {'session_id': self.userData['session_id'],
-                  'version':    self.userData['API_VERSION'],
-                  'locale':     self.userData['API_LOCALE'],
-                  'media_id':   media_id,
+        values = {'media_id':   media_id,
                   'fields':     fields}
 
-        opener = urllib2.build_opener()
-        opener.addheaders = self.userData['API_HEADERS']
+        request = self.makeAPIRequest('info', values)
 
-        options = urllib.urlencode(values)
-        urllib2.install_opener(opener)
-
-        url = self.userData['API_URL'] + "/info.0.json"
-        req = opener.open(url, options)
-        json_data = req.read()
-
-        if req.headers.get('content-encoding', None) == 'gzip':
-            json_data = gzip.GzipFile(fileobj=StringIO.StringIO(json_data))
-            json_data= json_data.read().decode('utf-8','ignore')
-
-        req.close()
-        request = json.loads(json_data)
+        if request['error']:
+            xbmc.log("CR: startPlayback: Connection failed, aborting..")
+            sys.exit(1)
 
         if int(resumetime) > 0:
             playcount = 0
@@ -971,8 +933,7 @@ class CrunchyJSON(object):
         item.setProperty('ResumeTime', resumetime)
 
         allurl = {}
-        playlist = xbmc.PlayList(1)
-        playlist.clear()
+        playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
 
         if request['error'] is False:
             if request['data']['stream_data'] is not None:
@@ -988,14 +949,16 @@ class CrunchyJSON(object):
                 else:
                     url = allurl['low']
 
-                playlist.add(url, item)
+                # Add to playlist stream with the selected quality
+                xbmc.log("CR: startPlayback: Add to playlist: %s" % url)
+
+                playlist.add(url, item, index=0)
                 player = xbmc.Player()
                 player.play(playlist)
-                #xbmc.Player().play(playlist)
 
                 timeplayed = 1 + int(resumetime)
                 temptimeplayed = timeplayed
-                time.sleep(1)
+                xbmc.sleep(1)
 
                 if timeplayed < 60:
                     playback_resume = False
@@ -1005,41 +968,64 @@ class CrunchyJSON(object):
                 x = 0
                 try:
                     while player.isPlaying:
-                        temptimeplayed = xbmc.Player().getTime()
+                        temptimeplayed = player.getTime()
                         timeplayed     = temptimeplayed
                         if x == 30:
                             x = 0
                             strTimePlayed = str(int(round(timeplayed)))
-                            values = {'session_id': session_id,
-                                      'event':      'playback_status',
-                                      'locale':     self.userData['API_LOCALE'],
+
+                            values = {'event':      'playback_status',
                                       'media_id':   media_id,
-                                      'version':    '221',
                                       'playhead':   strTimePlayed}
+
                             request = self.makeAPIRequest('log', values)
                         else:
                             x = x + 1
-                        time.sleep(1)
-                except:
-                    xbmc.log("XBMC stopped playing")
+                        xbmc.sleep(1)
+                except RuntimeError as e:
+                    xbmc.log("CR: startPlayback: Player stopped playing: %r" % e)
 
                 strTimePlayed = str(int(round(timeplayed)))
-                values        = {'session_id': session_id,
-                                 'event':      'playback_status',
-                                 'locale':     self.userData['API_LOCALE'],
+                values        = {'event':      'playback_status',
                                  'media_id':   media_id,
-                                 'version':    '221',
                                  'playhead':   strTimePlayed}
+
                 request       = self.makeAPIRequest('log', values)
+
+                xbmc.log("CR: startPlayback: Remove from playlist: %s" % url)
+
+                playlist.remove(url)
+
+
+    def pretty(self, d, indent=1):
+        """Pretty printer for dictionaries.
+
+        """
+        if isinstance(d, list):
+            for i in d:
+                self.pretty(i, indent + 1)
+        else:
+            for key, value in d.iteritems():
+                xbmc.log(' ' * 2 * indent + str(key), xbmc.LOGDEBUG)
+                if isinstance(value, (dict, list)):
+                    self.pretty(value, indent + 1)
+                else:
+                    if isinstance(value, unicode):
+                        value = value.encode('utf8')
+                    else:
+                        value = str(value)
+                    xbmc.log(' ' * 2 * (indent + 1) + value, xbmc.LOGDEBUG)
 
 
     def makeAPIRequest(self, method, options):
         if self.userData['premium_type'] in 'anime|drama|manga':
-            xbmc.log("Crunchyroll.bundle ----> get JSON")
+            xbmc.log("CR: makeAPIRequest: get JSON")
 
-            values = {'session_id': self.userData['session_id'],
-                      'version':    self.userData['API_VERSION'],
+            values = {'version':    self.userData['API_VERSION'],
                       'locale':     self.userData['API_LOCALE']}
+
+            if method != 'start_session':
+                values['session_id'] = self.userData['session_id']
 
             values.update(options)
             options = urllib.urlencode(values)
@@ -1049,17 +1035,55 @@ class CrunchyJSON(object):
             urllib2.install_opener(opener)
 
             url = self.userData['API_URL'] + "/" + method + ".0.json"
-            req = opener.open(url, options)
-            json_data = req.read()
 
-            if req.headers.get('content-encoding', None) == 'gzip':
-                json_data = gzip.GzipFile(fileobj=StringIO.StringIO(json_data))
-                json_data = json_data.read().decode('utf-8','ignore')
+            xbmc.log("CR: makeAPIRequest: url = %s" % url)
+            xbmc.log("CR: makeAPIRequest: options = %s" % options)
 
-            req.close()
-            return json.loads(json_data)
+
+            try:
+                request = None
+
+                req = opener.open(url, options)
+                json_data = req.read()
+
+                if req.headers.get('content-encoding', None) == 'gzip':
+                    json_data = gzip.GzipFile(fileobj=StringIO.StringIO(json_data))
+                    json_data = json_data.read().decode('utf-8', 'ignore')
+
+                req.close()
+
+                request = json.loads(json_data)
+
+            except (httplib.BadStatusLine,
+                    socket.error,
+                    urllib2.HTTPError) as e:
+
+                xbmc.log("CR: makeAPIRequest: Connection failed: %r" % e,
+                         xbmc.LOGERROR)
+
+                en, ev = sys.exc_info()[:2]
+            finally:
+                # Return dummy response if connection failed
+                if request is None:
+                    request = {'code':    'error',
+                               'message': "Connection failed: %r, %r" % (en, ev),
+                               'error':   True}
+
+            #xbmc.log("CR: makeAPIRequest: request = %s" % str(request), xbmc.LOGDEBUG)
+            xbmc.log("CR: makeAPIRequest: reply =", xbmc.LOGDEBUG)
+            self.pretty(request)
+
         else:
-            return False
+            pt = self.userData['premium_type']
+            s  = "Premium type check failed, premium_type:"
+
+            request = {'code':    'error',
+                       'message': "%s %s" % (s, pt),
+                       'error':   True}
+
+            xbmc.log("CR: makeAPIRequest: %s %s" % (s, pt), xbmc.LOGERROR)
+
+        return request
 
 
     def changeLocale(self):
@@ -1077,7 +1101,7 @@ class CrunchyJSON(object):
         if (self.userData['username'] != '' and
             self.userData['password'] != ''):
 
-            xbmc.log("Crunchyroll.language: --> Attempting to log-in with your user account...")
+            xbmc.log("CR: Attempting to log-in with your user account...")
             xbmc.executebuiltin('Notification(' + notice + ','
                                 + notice_msg + ',5000,' + icon + ')')
 
@@ -1097,7 +1121,7 @@ class CrunchyJSON(object):
         else:
             xbmc.executebuiltin('Notification(' + notice + ','
                                 + notice_err + ',5000,' + icon + ')')
-            xbmc.log("Crunchyroll.language: --> NO CRUNCHYROLL ACCOUNT FOUND!")
+            xbmc.log("CR: No Crunchyroll account found!")
 
         url  = 'https://www.crunchyroll.com/?a=formhandler'
         data = urllib.urlencode({'next_url': '',
@@ -1116,21 +1140,20 @@ class CrunchyJSON(object):
         req = self.opener.open(url, data)
         req.close()
 
-        xbmc.log('Crunchyroll.language: --> Now using '
-                 + self.userData['API_LOCALE'])
+        xbmc.log('CR: Now using ' + self.userData['API_LOCALE'])
         xbmc.executebuiltin('Notification(' + notice + ','
                             + notice_done + ',5000,' + icon + ')')
-        xbmc.log("Crunchyroll.language: --> Disabling the force change language setting.")
+        xbmc.log("CR: Disabling the force change language setting")
 
         self._addon.setSetting(id="change_language", value="0")
 
 
     def usage_reporting(self):
-        cj = cookielib.LWPCookieJar()
+        xbmc.log("CR: Attempting to report usage")
 
-        xbmc.log("Crunchyroll.usage: --> Attempting to report usage")
-
-        url  = 'https://docs.google.com/forms/d/1_qB4UznRfx69JrGCYmKbbeQcFc_t2-9fuNvXGGvl8mk/formResponse'
+        url  = ''.join(['https://docs.google.com/forms/d',
+                        '/1_qB4UznRfx69JrGCYmKbbeQcFc_t2-9fuNvXGGvl8mk',
+                        '/formResponse'])
         data = urllib.urlencode({'entry_1580743010': self.userData['device_id'],
                                  'entry_623948459':  self.userData['premium_type'],
                                  'entry_1130326797': __version__,
