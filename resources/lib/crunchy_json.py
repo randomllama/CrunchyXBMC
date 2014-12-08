@@ -1029,7 +1029,7 @@ class CrunchyJSON(object):
 
 
             try:
-                request = None
+                en = ev = None
 
                 req = opener.open(url, options)
                 json_data = req.read()
@@ -1052,7 +1052,7 @@ class CrunchyJSON(object):
                 en, ev = sys.exc_info()[:2]
             finally:
                 # Return dummy response if connection failed
-                if request is None:
+                if en is not None:
                     request = {'code':    'error',
                                'message': "Connection failed: %r, %r" % (en, ev),
                                'error':   True}
