@@ -257,8 +257,7 @@ class CrunchyJSON(object):
               current_datetime > userData['session_expires']):
 
             # Re-start new session
-            xbmc.log("CR: Valid auth token was detected."
-                     + " Restarting session.")
+            xbmc.log("CR: Valid auth token was detected. Restarting session.")
 
             options = {'device_id':    userData["device_id"],
                        'device_type':  userData['API_DEVICE_TYPE'],
@@ -267,75 +266,60 @@ class CrunchyJSON(object):
 
             request = self.makeAPIRequest('start_session', options)
 
-            try:
-                if request['error'] is False:
-                    userData['session_id']      = request['data']['session_id']
-                    userData['auth_expires']    = dateutil.parser.parse(request['data']['expires'])
-                    userData['premium_type']    = ('free'
-                                                       if request['data']['user']['premium'] == ''
-                                                       else request['data']['user']['premium'])
-                    userData['auth_token']      = request['data']['auth']
-                    # 4 hours is a guess. Might be +/- 4.
-                    userData['session_expires'] = (current_datetime +
-                                                   durel.relativedelta(hours = +4))
-                    userData['test_session']    = current_datetime
+            if request['error'] is False:
+                userData['session_id']      = request['data']['session_id']
+                userData['auth_expires']    = dateutil.parser.parse(request['data']['expires'])
+                userData['premium_type']    = ('free'
+                                                   if request['data']['user']['premium'] == ''
+                                                   else request['data']['user']['premium'])
+                userData['auth_token']      = request['data']['auth']
+                # 4 hours is a guess. Might be +/- 4.
+                userData['session_expires'] = (current_datetime +
+                                               durel.relativedelta(hours = +4))
+                userData['test_session']    = current_datetime
 
-                    xbmc.log("CR: Session restart successful."
-                             + " Session ID: "
-                             + str(userData['session_id']))
+                xbmc.log("CR: Session restart successful."
+                         + " Session ID: "
+                         + str(userData['session_id']))
 
-                    # Call for usage reporting
-                    if current_datetime > userData['lastreported']:
-                        userData['lastreported'] = (current_datetime +
-                                                    durel.relativedelta(hours = +24))
-                        self.userData = userData
-                        self.usage_reporting()
+                # Call for usage reporting
+                if current_datetime > userData['lastreported']:
+                    userData['lastreported'] = (current_datetime +
+                                                durel.relativedelta(hours = +24))
+                    self.userData = userData
+                    self.usage_reporting()
 
-                    # Verify user is premium
-                    if userData['premium_type'] in 'anime|drama|manga':
-                        xbmc.log("CR: User is a premium "
-                                 + str(userData['premium_type']) + " member")
-
-                        self.userData = userData
-                        userData.close()
-                        return True
-
-                    else:
-                        xbmc.log("CR: User is not a premium member")
-                        xbmc.executebuiltin('Notification(' + notice_msg + ','
-                                            + acc_type_error + ',5000)')
-
-                        self.userData = userData = None
-                        userData.close()
-
-                        crm.UI().addItem({'Title': acc_type_error,
-                                          'mode':  'Fail'})
-                        crm.UI().endofdirectory('none')
-
-                        return False
-
-                elif request['error'] is True:
-                    # Remove userData so we start a new session next time
-                    del userData['session_id']
-                    del userData['auth_expires']
-                    del userData['premium_type']
-                    del userData['auth_token']
-                    del userData['session_expires']
-
-                    xbmc.log("CR: Error restarting session."
-                             + " Error message: "
-                             + str(request['message']), xbmc.LOGERROR)
+                # Verify user is premium
+                if userData['premium_type'] in 'anime|drama|manga':
+                    xbmc.log("CR: User is a premium "
+                             + str(userData['premium_type']) + " member")
 
                     self.userData = userData
-                    userData.Save()
+                    userData.close()
+
+                    return True
+
+                else:
+                    xbmc.log("CR: User is not a premium member")
+                    xbmc.executebuiltin('Notification(' + notice_msg + ','
+                                        + acc_type_error + ',5000)')
+
+                    self.userData = userData = None
+                    userData.close()
+
+                    crm.UI().addItem({'Title': acc_type_error,
+                                      'mode':  'Fail'})
+                    crm.UI().endofdirectory('none')
+
                     return False
 
-            except:
-                userData['session_id']      = ''
-                userData['auth_expires']    = current_datetime - durel.relativedelta(hours = +24)
-                userData['premium_type']    = 'unknown'
-                userData['auth_token']      = ''
-                userData['session_expires'] = current_datetime - durel.relativedelta(hours = +24)
+            elif request['error'] is True:
+                # Remove userData so a new session is started next time
+                del userData['session_id']
+                del userData['auth_expires']
+                del userData['premium_type']
+                del userData['auth_token']
+                del userData['session_expires']
 
                 xbmc.log("CR: Error restarting session."
                          + " Error message: "
