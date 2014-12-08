@@ -35,6 +35,7 @@ import cookielib
 
 import xbmc
 import xbmcgui
+import xbmcplugin
 
 import dateutil.tz
 import dateutil.parser
@@ -916,13 +917,6 @@ class CrunchyJSON(object):
         else:
             playcount = 1
 
-        item = xbmcgui.ListItem(Title)
-        item.setInfo(type="Video", infoLabels={"Title":     Title,
-                                               "playcount": playcount})
-        item.setThumbnailImage(Thumb)
-        item.setProperty('TotalTime',  duration)
-        item.setProperty('ResumeTime', resumetime)
-
         allurl = {}
         playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
 
@@ -940,15 +934,31 @@ class CrunchyJSON(object):
                 else:
                     url = allurl['low']
 
-                # Add to playlist stream with the selected quality
-                xbmc.log("CR: startPlayback: Add to playlist: %s" % url)
+                item = xbmcgui.ListItem(Title, path=url)
+                item.setInfo(type="Video", infoLabels={"Title":     Title,
+                                                       "playcount": playcount})
+                item.setThumbnailImage(Thumb)
+                item.setProperty('TotalTime',  duration)
+                item.setProperty('ResumeTime', resumetime)
 
-                playlist.add(url, item, index=0)
+                xbmc.log("CR: startPlayback: url = %s" % url)
                 player = xbmc.Player()
-                player.play(playlist)
+
+                xbmcplugin.setResolvedUrl(int(sys.argv[1]),
+                                          succeeded=True,
+                                          listitem=item)
+
+                xbmc.log("CR: startPlayback: Starting ...")
 
                 timeplayed = resumetime
-                xbmc.sleep(1)
+
+                # Give the player time to start up
+                time.sleep(3)
+
+                s = "CR: startPlayback: player is playing == %d"
+                xbmc.log(s % player.isPlaying(), xbmc.LOGDEBUG)
+
+                playlist_position = playlist.getposition()
 
                 if int(resumetime) <= 60:
                     playback_resume = False
@@ -957,7 +967,7 @@ class CrunchyJSON(object):
                     if playback_resume is True:
                         player.seekTime(float(resumetime))
 
-                    while player.isPlaying:
+                    while playlist_position == playlist.getposition():
                         timeplayed = str(int(player.getTime()))
 
                         values = {'event':      'playback_status',
@@ -966,20 +976,13 @@ class CrunchyJSON(object):
 
                         request = self.makeAPIRequest('log', values)
 
+                        # Use video timeline here
                         xbmc.sleep(5000)
 
                 except RuntimeError as e:
                     xbmc.log("CR: startPlayback: Player stopped playing: %r" % e)
 
-                values  = {'event':    'playback_status',
-                           'media_id': media_id,
-                           'playhead': timeplayed}
-
-                request = self.makeAPIRequest('log', values)
-
-                xbmc.log("CR: startPlayback: Remove from playlist: %s" % url)
-
-                playlist.remove(url)
+                xbmc.log("CR: startPlayback: Finished logging: %s" % url)
 
 
     def pretty(self, d, indent=1):

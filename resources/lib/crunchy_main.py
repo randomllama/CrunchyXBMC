@@ -121,11 +121,11 @@ class UI(object):
                                  "Year":  info['year']})
         li.setProperty("Fanart_Image", info['Fanart_Image'])
 
-        # For videos, replace context menu with queue and add to favorites
         if not isFolder:
-            #li.setProperty("IsPlayable", "true")
-            # Let xbmc know this can be played, unlike a folder.
-            # Add context menu items to non-folder items.
+            # Let XBMC know this can be played, unlike a folder
+            li.setProperty('IsPlayable', 'true')
+
+            # Add context menu
             rex = re.compile(r'mode=[a-z_]*[^&]')
             s1  = re.sub(rex, 'mode=add_to_queue', u)
             s2  = re.sub(rex, 'mode=remove_from_queue', u)
