@@ -26,6 +26,8 @@ import xbmcplugin
 
 import crunchy_json as crj
 
+from crunchy_json import log
+
 
 
 class updateArgs(object):
@@ -136,6 +138,8 @@ class UI(object):
                            ('Add-on settings', 'XBMC.Addon.OpenSettings(%s)' % self._addon.getAddonInfo('id'))]
 
             li.addContextMenuItems(contextmenu, replaceItems=True)
+
+            log("CR: addItem: mode = %s" % str(self.main.args.mode))
 
         # For folders, completely remove contextmenu, as it is totally useless
         else:
@@ -294,8 +298,7 @@ class UI(object):
                                                  'add_to_queue',
                                                  options)
 
-        xbmc.log("CR: add_to_queue: request['error'] = "
-                 + str(request['error']))
+        log("CR: add_to_queue: request['error'] = " + str(request['error']))
 
 
     def remove_from_queue(self):
@@ -326,8 +329,8 @@ class UI(object):
                                                          'remove_from_queue',
                                                          options)
 
-                xbmc.log("CR: remove_from_queue: request['error'] = "
-                         + str(request['error']))
+                log("CR: remove_from_queue: request['error'] = "
+                    + str(request['error']))
 
 
     def startVideo(self):
@@ -343,7 +346,7 @@ class UI(object):
         self.addItem({'Title': badstuff,
                       'mode':  'Fail'})
 
-        xbmc.log("CR: Main: checkMode fall through", xbmc.LOGWARNING)
+        log("CR: Main: checkMode fall through", xbmc.LOGWARNING)
 
         self.endofdirectory()
 
@@ -377,11 +380,11 @@ class Main(object):
 
     def checkMode(self):
         mode = self.args.mode
-        xbmc.log("CR: Main: argv[0] = %s" % sys.argv[0])
-        xbmc.log("CR: Main: argv[1] = %s" % sys.argv[1])
-        xbmc.log("CR: Main: argv[2] = %s" % sys.argv[2])
-        xbmc.log("CR: Main: args = %s" % str(self.args.__dict__))
-        xbmc.log("CR: Main: mode = %s" % mode)
+        log("CR: Main: argv[0] = %s" % sys.argv[0])
+        log("CR: Main: argv[1] = %s" % sys.argv[1])
+        log("CR: Main: argv[2] = %s" % sys.argv[2])
+        log("CR: Main: args = %s" % str(self.args.__dict__))
+        log("CR: Main: mode = %s" % mode)
         if mode is None:
             UI().showMain()
         elif mode == 'Channels':
