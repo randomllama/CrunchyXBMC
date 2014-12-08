@@ -778,6 +778,7 @@ class CrunchyJSON(object):
     def Queue(self):
         queue_type = self._addon.getSetting("queue_type")
 
+        xbmc.log("CR: Queue: queue type is " + str(queue_type))
         if queue_type == '0':
             fields  = "".join(["media.episode_number,",
                                "media.name,",
@@ -801,6 +802,7 @@ class CrunchyJSON(object):
 
             request = self.makeAPIRequest('queue', options)
 
+            xbmc.log("CR: Queue: request['error'] = " + str(request['error']))
             if request['error'] is False:
                 return self.list_media_items(request['data'],
                                              'Queue',
@@ -826,7 +828,9 @@ class CrunchyJSON(object):
 
             request = self.makeAPIRequest('queue', options)
 
+            xbmc.log("CR: Queue: request['error'] = " + str(request['error']))
             if request['error'] is False:
+                xbmc.log("CR: Queue: has %d series" % len(request['data']))
                 for series in request['data']:
                     series      = series['series']
                     # Only available for some series
@@ -866,6 +870,10 @@ class CrunchyJSON(object):
                                           'plot':         description,
                                           'year':         year},
                                           True)
+                        xbmc.log("CR: Queue: series = '%s' queued"
+                                 % series['name'.encode('utf8')])
+                    else:
+                        xbmc.log("CR: Queue: series not queued!")
 
                 crm.UI().endofdirectory('none')
 
