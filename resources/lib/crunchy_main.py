@@ -16,6 +16,7 @@ this program; if not, write to the Free Software Foundation,
 Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
+import re
 import sys
 import urllib
 
@@ -24,6 +25,8 @@ import xbmcgui
 import xbmcplugin
 
 import crunchy_json as crj
+
+from crunchy_json import log
 
 
 
@@ -92,7 +95,7 @@ class UI(object):
         info.setdefault('plot',      'None')
 
         # Create params for xbmcplugin module
-        u = sys.argv[0]+\
+        u = sys.argv[0]   +\
             '?url='       + urllib.quote_plus(info['url'])          +\
             '&mode='      + urllib.quote_plus(info['mode'])         +\
             '&name='      + urllib.quote_plus(info['Title'])        +\
@@ -120,13 +123,24 @@ class UI(object):
                                  "Year":  info['year']})
         li.setProperty("Fanart_Image", info['Fanart_Image'])
 
-        # For videos, replace context menu with queue and add to favorites
         if not isFolder:
-            #li.setProperty("IsPlayable", "true")
-            # Let xbmc know this can be played, unlike a folder.
-            # Add context menu items to non-folder items.
-            contextmenu = [('Queue Video', 'Action(Queue)')]
-            li.addContextMenuItems(contextmenu)
+            # Let XBMC know this can be played, unlike a folder
+            li.setProperty('IsPlayable', 'true')
+
+            # Add context menu
+            rex = re.compile(r'mode=[a-z_]*[^&]')
+            s1  = re.sub(rex, 'mode=add_to_queue', u)
+            s2  = re.sub(rex, 'mode=remove_from_queue', u)
+
+            contextmenu = [('Queue Video',     'XBMC.Action(Queue)'),
+                           ('Enqueue Series',  'XBMC.RunPlugin(%s)' % s1),
+                           ('Dequeue Series',  'XBMC.RunPlugin(%s)' % s2),
+                           ('Add-on settings', 'XBMC.Addon.OpenSettings(%s)' % self._addon.getAddonInfo('id'))]
+
+            li.addContextMenuItems(contextmenu, replaceItems=True)
+
+            log("CR: addItem: mode = %s" % str(self.main.args.mode))
+
         # For folders, completely remove contextmenu, as it is totally useless
         else:
             li.addContextMenuItems([], replaceItems=True)
@@ -241,11 +255,82 @@ class UI(object):
 
 
     def json_History(self):
+        """Display Crunchyroll history.
+
+        """
         crj.CrunchyJSON().History()
 
 
     def queue(self):
+        """Display Crunchyroll queue.
+
+        """
         crj.CrunchyJSON().Queue()
+
+
+    def add_to_queue(self):
+        """Add selected video series to queue at Crunchyroll.
+
+        """
+        # Get series_id
+        options = {'media_id': self.main.args.id,
+                   'fields':   "series.series_id"}
+        request = crj.CrunchyJSON.makeAPIRequest(crj.CrunchyJSON(),
+                                                 'info',
+                                                 options)
+
+        series_id = request['data']['series_id']
+
+        # Add the series to queue at CR if it is not there already
+        options = {'series_id': series_id,
+                   'fields':    "series.series_id"}
+        request = crj.CrunchyJSON.makeAPIRequest(crj.CrunchyJSON(),
+                                                 'queue',
+                                                 options)
+
+        for col in request['data']:
+            if series_id == col['series']['series_id']:
+                return
+
+        options = {'series_id': series_id}
+
+        request = crj.CrunchyJSON.makeAPIRequest(crj.CrunchyJSON(),
+                                                 'add_to_queue',
+                                                 options)
+
+        log("CR: add_to_queue: request['error'] = " + str(request['error']))
+
+
+    def remove_from_queue(self):
+        """Remove selected video series from queue at Crunchyroll.
+
+        """
+        # Get series_id
+        options = {'media_id': self.main.args.id,
+                   'fields':   "series.series_id"}
+        request = crj.CrunchyJSON.makeAPIRequest(crj.CrunchyJSON(),
+                                                 'info',
+                                                 options)
+
+        series_id = request['data']['series_id']
+
+        # Remove the series from queue at CR if it is there
+        options = {'series_id': series_id,
+                   'fields':    "series.series_id"}
+        request = crj.CrunchyJSON.makeAPIRequest(crj.CrunchyJSON(),
+                                                 'queue',
+                                                 options)
+
+        for col in request['data']:
+            if series_id == col['series']['series_id']:
+                options = {'series_id': series_id}
+
+                request = crj.CrunchyJSON.makeAPIRequest(crj.CrunchyJSON(),
+                                                         'remove_from_queue',
+                                                         options)
+
+                log("CR: remove_from_queue: request['error'] = "
+                    + str(request['error']))
 
 
     def startVideo(self):
@@ -261,7 +346,7 @@ class UI(object):
         self.addItem({'Title': badstuff,
                       'mode':  'Fail'})
 
-        xbmc.log("CR: Main: checkMode fall through", xbmc.LOGWARNING)
+        log("CR: Main: checkMode fall through", xbmc.LOGWARNING)
 
         self.endofdirectory()
 
@@ -295,11 +380,11 @@ class Main(object):
 
     def checkMode(self):
         mode = self.args.mode
-        xbmc.log("CR: Main: argv[0] = %s" % sys.argv[0])
-        xbmc.log("CR: Main: argv[1] = %s" % sys.argv[1])
-        xbmc.log("CR: Main: argv[2] = %s" % sys.argv[2])
-        xbmc.log("CR: Main: args = %s" % str(self.args.__dict__))
-        xbmc.log("CR: Main: mode = %s" % mode)
+        log("CR: Main: argv[0] = %s" % sys.argv[0])
+        log("CR: Main: argv[1] = %s" % sys.argv[1])
+        log("CR: Main: argv[2] = %s" % sys.argv[2])
+        log("CR: Main: args = %s" % str(self.args.__dict__))
+        log("CR: Main: mode = %s" % mode)
         if mode is None:
             UI().showMain()
         elif mode == 'Channels':
@@ -316,6 +401,10 @@ class Main(object):
             UI().json_History()
         elif mode == 'queue':
             UI().queue()
+        elif mode == 'add_to_queue':
+            UI().add_to_queue()
+        elif mode == 'remove_from_queue':
+            UI().remove_from_queue()
         elif mode == 'videoplay':
             UI().startVideo()
         else:
