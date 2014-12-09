@@ -48,6 +48,7 @@ class UI(object):
         self.main   = Main(checkMode=False)
         self._addon = sys.modules['__main__'].__settings__
         self._lang  = sys.modules['__main__'].__language__
+        self._id    = self._addon.getAddonInfo('id')
         xbmcplugin.setContent(int(sys.argv[1]), 'movies')
 
 
@@ -70,7 +71,11 @@ class UI(object):
                                   updateListing = dontAddToHierarchy)
 
 
-    def addItem(self, info, isFolder=True, total_items=0):
+    def addItem(self,
+                info,
+                isFolder=True,
+                total_items=0,
+                rex=re.compile(r'(?<=mode=)[^&]*')):
         # Defaults in dict. Use 'None' instead of None so it is compatible for
         # quote_plus in parseArgs.
         info.setdefault('url',       'None')
@@ -123,27 +128,38 @@ class UI(object):
                                  "Year":  info['year']})
         li.setProperty("Fanart_Image", info['Fanart_Image'])
 
+        # Add context menu
+        s1  = re.sub(rex, 'add_to_queue',      u)
+        s2  = re.sub(rex, 'remove_from_queue', u)
+
+        cm = [('Add-on settings', 'XBMC.Addon.OpenSettings(%s)' % self._id)]
+
+        if (self.main.args.mode is not None and
+            self.main.args.mode not in 'Channels|list_categories'):
+
+            cm.insert(0, ('Queue Video', 'XBMC.Action(Queue)'))
+
         if not isFolder:
             # Let XBMC know this can be played, unlike a folder
             li.setProperty('IsPlayable', 'true')
 
-            # Add context menu
-            rex = re.compile(r'mode=[a-z_]*[^&]')
-            s1  = re.sub(rex, 'mode=add_to_queue', u)
-            s2  = re.sub(rex, 'mode=remove_from_queue', u)
+            cm.insert(1, ('Dequeue Series', 'XBMC.RunPlugin(%s)' % s2))
+            cm.insert(1, ('Enqueue Series', 'XBMC.RunPlugin(%s)' % s1))
 
-            contextmenu = [('Queue Video',     'XBMC.Action(Queue)'),
-                           ('Enqueue Series',  'XBMC.RunPlugin(%s)' % s1),
-                           ('Dequeue Series',  'XBMC.RunPlugin(%s)' % s2),
-                           ('Add-on settings', 'XBMC.Addon.OpenSettings(%s)' % self._addon.getAddonInfo('id'))]
-
-            li.addContextMenuItems(contextmenu, replaceItems=True)
-
-            log("CR: addItem: mode = %s" % str(self.main.args.mode))
-
-        # For folders, completely remove contextmenu, as it is totally useless
         else:
-            li.addContextMenuItems([], replaceItems=True)
+            if (self.main.args.mode is not None and
+                self.main.args.mode in 'list_coll|list_series|queue'):
+
+                cm.insert(1, ('Dequeue Series', 'XBMC.RunPlugin(%s)' % s2))
+
+            if (self.main.args.mode is not None and
+                self.main.args.mode in 'list_coll|list_series'):
+
+                cm.insert(1, ('Enqueue Series', 'XBMC.RunPlugin(%s)' % s1))
+
+        cm.append(('Toggle debug', 'XBMC.ToggleDebug'))
+
+        li.addContextMenuItems(cm, replaceItems=True)
 
         # Add item to list
         xbmcplugin.addDirectoryItem(handle     = int(sys.argv[1]),
@@ -273,13 +289,16 @@ class UI(object):
 
         """
         # Get series_id
-        options = {'media_id': self.main.args.id,
-                   'fields':   "series.series_id"}
-        request = crj.CrunchyJSON.makeAPIRequest(crj.CrunchyJSON(),
-                                                 'info',
-                                                 options)
+        if self.main.args.series_id is None:
+            options = {'media_id': self.main.args.id,
+                       'fields':   "series.series_id"}
+            request = crj.CrunchyJSON.makeAPIRequest(crj.CrunchyJSON(),
+                                                     'info',
+                                                     options)
 
-        series_id = request['data']['series_id']
+            series_id = request['data']['series_id']
+        else:
+            series_id = self.main.args.series_id
 
         # Add the series to queue at CR if it is not there already
         options = {'series_id': series_id,
@@ -306,13 +325,16 @@ class UI(object):
 
         """
         # Get series_id
-        options = {'media_id': self.main.args.id,
-                   'fields':   "series.series_id"}
-        request = crj.CrunchyJSON.makeAPIRequest(crj.CrunchyJSON(),
-                                                 'info',
-                                                 options)
+        if self.main.args.series_id is None:
+            options = {'media_id': self.main.args.id,
+                       'fields':   "series.series_id"}
+            request = crj.CrunchyJSON.makeAPIRequest(crj.CrunchyJSON(),
+                                                     'info',
+                                                     options)
 
-        series_id = request['data']['series_id']
+            series_id = request['data']['series_id']
+        else:
+            series_id = self.main.args.series_id
 
         # Remove the series from queue at CR if it is there
         options = {'series_id': series_id,
@@ -331,6 +353,9 @@ class UI(object):
 
                 log("CR: remove_from_queue: request['error'] = "
                     + str(request['error']))
+
+        # Refresh directory listing
+        xbmc.executebuiltin('XBMC.Container.Refresh')
 
 
     def startVideo(self):
