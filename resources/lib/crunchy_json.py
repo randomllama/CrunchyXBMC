@@ -1043,7 +1043,8 @@ class CrunchyJSON(object):
 
             except (httplib.BadStatusLine,
                     socket.error,
-                    urllib2.HTTPError) as e:
+                    urllib2.HTTPError,
+                    urllib2.URLError) as e:
 
                 log("CR: makeAPIRequest: Connection failed: %r" % e,
                     xbmc.LOGERROR)
