@@ -58,7 +58,7 @@ class _Info(object):
 
 class CrunchyJSON(object):
 
-    def __init__(self, checkMode=True):
+    def __init__(self):
         self._addon = sys.modules['__main__'].__settings__
         self._lang  = sys.modules['__main__'].__language__
 
@@ -431,6 +431,8 @@ class CrunchyJSON(object):
 
 
     def list_series(self, args):
+        UI = crm.UI()
+
         fields  = "".join(["series.name,",
                            "series.description,",
                            "series.series_id,",
@@ -491,44 +493,49 @@ class CrunchyJSON(object):
 
                     queued = (series['series_id'] in queue)
 
-                    crm.UI().addItem({'Title':        series['name'].encode("utf8"),
-                                      'mode':         'list_coll',
-                                      'series_id':    series['series_id'],
-                                      'count':        str(series['media_count']),
-                                      'Thumb':        thumb,
-                                      'Fanart_Image': art,
-                                      'plot':         description,
-                                      'year':         year},
-                                     isFolder=True,
-                                     queued=queued)
+                    UI.addItem({'Title':        series['name'].encode("utf8"),
+                                'mode':         'list_coll',
+                                'series_id':    series['series_id'],
+                                'count':        str(series['media_count']),
+                                'Thumb':        thumb,
+                                'Fanart_Image': art,
+                                'plot':         description,
+                                'year':         year},
+                               isFolder=True,
+                               queued=queued)
 
             if counter >= 64:
                 offset = str(int(args.offset) + counter)
-                crm.UI().addItem({'Title':    '...load more',
-                                  'mode':     'list_series',
-                                  'showtype': args.showtype,
-                                  'filterx':  args.filterx,
-                                  'offset':   offset})
+                UI.addItem({'Title':    '...load more',
+                            'mode':     'list_series',
+                            'showtype': args.showtype,
+                            'filterx':  args.filterx,
+                            'offset':   offset})
 
-        crm.UI().endofdirectory('none')
+        UI.endofdirectory('none')
 
 
     def list_categories(self, args):
+        UI = crm.UI()
+
         options = {'media_type': args.showtype.lower()}
+
         request = self.makeAPIRequest('categories', options)
 
         if request['error'] is False:
             for i in request['data'][args.filterx]:
-                crm.UI().addItem({'Title':    i['label'].encode("utf8"),
-                                  'mode':     'list_series',
-                                  'showtype': args.showtype,
-                                  'filterx':  'tag:' + i['tag']},
-                                 isFolder=True)
+                UI.addItem({'Title':    i['label'].encode("utf8"),
+                            'mode':     'list_series',
+                            'showtype': args.showtype,
+                            'filterx':  'tag:' + i['tag']},
+                           isFolder=True)
 
-        crm.UI().endofdirectory('none')
+        UI.endofdirectory('none')
 
 
     def list_collections(self, args):
+        UI = crm.UI()
+
         fields  = "".join(["collection.collection_id,",
                            "collection.season,",
                            "collection.name,",
@@ -554,21 +561,21 @@ class CrunchyJSON(object):
 
                 for collection in request['data']:
                     complete = '1' if collection['complete'] else '0'
-                    crm.UI().addItem({'Title':        collection['name'].encode("utf8"),
-                                      'filterx':      args.name,
-                                      'mode':         'list_media',
-                                      'count':        str(args.count),
-                                      'id':           collection['collection_id'],
-                                      'plot':         collection['description'].encode("utf8"),
-                                      'complete':     complete,
-                                      'season':       str(collection['season']),
-                                      'series_id':    args.series_id,
-                                      'Thumb':        args.icon,
-                                      'Fanart_Image': args.fanart},
-                                     isFolder=True,
-                                     queued=queued)
+                    UI.addItem({'Title':        collection['name'].encode("utf8"),
+                                'filterx':      args.name,
+                                'mode':         'list_media',
+                                'count':        str(args.count),
+                                'id':           collection['collection_id'],
+                                'plot':         collection['description'].encode("utf8"),
+                                'complete':     complete,
+                                'season':       str(collection['season']),
+                                'series_id':    args.series_id,
+                                'Thumb':        args.icon,
+                                'Fanart_Image': args.fanart},
+                               isFolder=True,
+                               queued=queued)
 
-        crm.UI().endofdirectory('none')
+        UI.endofdirectory('none')
 
 
     def list_media(self, args):
@@ -609,7 +616,8 @@ class CrunchyJSON(object):
         """List video episodes.
 
         """
-        args  = crm.UI().main.args
+        UI    = crm.UI()
+        args  = UI.main.args
         queue = self.get_queued(args)
 
         for media in request:
@@ -734,20 +742,20 @@ class CrunchyJSON(object):
             url = media['url']
             media_id = url.split('-')[-1]
 
-            crm.UI().addItem({'Title':        name.encode("utf8"),
-                              'mode':         'videoplay',
-                              'id':           media_id.encode("utf8"),
-                              'Thumb':        thumb.encode("utf8"),
-                              'url':          url.encode("utf8"),
-                              'Fanart_Image': fanart,
-                              'plot':         description,
-                              'year':         year,
-                              'playhead':     playhead,
-                              'duration':     duration},
-                             isFolder=False,
-                             queued=queued)
+            UI.addItem({'Title':        name.encode("utf8"),
+                        'mode':         'videoplay',
+                        'id':           media_id.encode("utf8"),
+                        'Thumb':        thumb.encode("utf8"),
+                        'url':          url.encode("utf8"),
+                        'Fanart_Image': fanart,
+                        'plot':         description,
+                        'year':         year,
+                        'playhead':     playhead,
+                        'duration':     duration},
+                       isFolder=False,
+                       queued=queued)
 
-        crm.UI().endofdirectory('none')
+        UI.endofdirectory('none')
 
 
     def History(self):
@@ -781,6 +789,7 @@ class CrunchyJSON(object):
 
 
     def Queue(self):
+        UI         = crm.UI()
         queue_type = self._addon.getSetting("queue_type")
 
         log("CR: Queue: queue type is " + str(queue_type))
@@ -868,22 +877,22 @@ class CrunchyJSON(object):
                         'name' in series and
                         series['media_count'] > 0):
 
-                        crm.UI().addItem({'Title':        series['name'].encode("utf8"),
-                                          'mode':         'list_coll',
-                                          'series_id':    series['series_id'],
-                                          'Thumb':        thumb,
-                                          'Fanart_Image': art,
-                                          'plot':         description,
-                                          'year':         year},
-                                         isFolder=True,
-                                         queued=True)
+                        UI.addItem({'Title':        series['name'].encode("utf8"),
+                                    'mode':         'list_coll',
+                                    'series_id':    series['series_id'],
+                                    'Thumb':        thumb,
+                                    'Fanart_Image': art,
+                                    'plot':         description,
+                                    'year':         year},
+                                   isFolder=True,
+                                   queued=True)
 
                         log("CR: Queue: series = '%s' queued"
                             % series['name'.encode('utf8')])
                     else:
                         log("CR: Queue: series not queued!")
 
-                crm.UI().endofdirectory('none')
+                UI.endofdirectory('none')
 
 
     def get_queued(self, args):
