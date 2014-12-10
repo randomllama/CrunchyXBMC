@@ -75,6 +75,7 @@ class UI(object):
                 info,
                 isFolder=True,
                 total_items=0,
+                queued=False,
                 rex=re.compile(r'(?<=mode=)[^&]*')):
         # Defaults in dict. Use 'None' instead of None so it is compatible for
         # quote_plus in parseArgs.
@@ -143,19 +144,19 @@ class UI(object):
             # Let XBMC know this can be played, unlike a folder
             li.setProperty('IsPlayable', 'true')
 
-            cm.insert(1, ('Dequeue Series', 'XBMC.RunPlugin(%s)' % s2))
-            cm.insert(1, ('Enqueue Series', 'XBMC.RunPlugin(%s)' % s1))
+            if queued:
+                cm.insert(1, ('Dequeue Series', 'XBMC.RunPlugin(%s)' % s2))
+            else:
+                cm.insert(1, ('Enqueue Series', 'XBMC.RunPlugin(%s)' % s1))
 
         else:
             if (self.main.args.mode is not None and
-                self.main.args.mode in 'list_coll|list_series|queue'):
-
-                cm.insert(1, ('Dequeue Series', 'XBMC.RunPlugin(%s)' % s2))
-
-            if (self.main.args.mode is not None and
                 self.main.args.mode in 'list_coll|list_series'):
 
-                cm.insert(1, ('Enqueue Series', 'XBMC.RunPlugin(%s)' % s1))
+                if queued:
+                    cm.insert(1, ('Dequeue Series', 'XBMC.RunPlugin(%s)' % s2))
+                else:
+                    cm.insert(1, ('Enqueue Series', 'XBMC.RunPlugin(%s)' % s1))
 
         cm.append(('Toggle debug', 'XBMC.ToggleDebug'))
 
