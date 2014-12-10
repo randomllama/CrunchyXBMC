@@ -241,33 +241,31 @@ class UI(object):
 
 
     def json_list_series(self):
-        crj.CrunchyJSON().list_series(self.main.args.name,
-                                      self.main.args.showtype,
-                                      self.main.args.filterx,
-                                      self.main.args.offset)
+        """List series.
+
+        """
+        crj.CrunchyJSON().list_series(self.main.args)
 
 
     def json_list_cat(self):
-        crj.CrunchyJSON().list_categories(self.main.args.name,
-                                          self.main.args.showtype,
-                                          self.main.args.filterx)
+        """List categories.
+
+        """
+        crj.CrunchyJSON().list_categories(self.main.args)
 
 
     def json_list_collection(self):
-        crj.CrunchyJSON().list_collections(self.main.args.series_id,
-                                           self.main.args.name,
-                                           self.main.args.count,
-                                           self.main.args.icon,
-                                           self.main.args.fanart)
+        """List collections.
+
+        """
+        crj.CrunchyJSON().list_collections(self.main.args)
 
 
     def json_list_media(self):
-        crj.CrunchyJSON().list_media(self.main.args.id,
-                                     self.main.args.filterx,
-                                     self.main.args.count,
-                                     self.main.args.complete,
-                                     self.main.args.season,
-                                     self.main.args.fanart)
+        """List episodes.
+
+        """
+        crj.CrunchyJSON().list_media(self.main.args)
 
 
     def json_History(self):
@@ -359,10 +357,10 @@ class UI(object):
 
 
     def startVideo(self):
-        crj.CrunchyJSON().startPlayback(self.main.args.name,
-                                        self.main.args.id,
-                                        self.main.args.duration,
-                                        self.main.args.icon)
+        """Start video playback.
+
+        """
+        crj.CrunchyJSON().startPlayback(self.main.args)
 
 
     def Fail(self):

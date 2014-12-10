@@ -430,7 +430,7 @@ class CrunchyJSON(object):
             return False
 
 
-    def list_series(self, title, media_type, filterx, offset):
+    def list_series(self, args):
         fields  = "".join(["series.name,",
                            "series.description,",
                            "series.series_id,",
@@ -443,11 +443,11 @@ class CrunchyJSON(object):
                            "image.large_url,",
                            "series.landscape_image,",
                            "image.full_url"])
-        options = {'media_type': media_type.lower(),
-                   'filter':     filterx,
+        options = {'media_type': args.showtype.lower(),
+                   'filter':     args.filterx,
                    'fields':     fields,
                    'limit':      '64',
-                   'offset':     int(offset)}
+                   'offset':     int(args.offset)}
 
         request = self.makeAPIRequest('list_series', options)
 
@@ -487,8 +487,8 @@ class CrunchyJSON(object):
                     'name' in series and
                     series['media_count'] > 0):
 
-                    crm.UI().addItem({'Title':       series['name'].encode("utf8"),
-                                      'mode':        'list_coll',
+                    crm.UI().addItem({'Title':        series['name'].encode("utf8"),
+                                      'mode':         'list_coll',
                                       'series_id':    series['series_id'],
                                       'count':        str(series['media_count']),
                                       'Thumb':        thumb,
@@ -498,87 +498,73 @@ class CrunchyJSON(object):
                                       True)
 
             if counter >= 64:
-                offset = int(offset) + counter
+                offset = str(int(args.offset) + counter)
                 crm.UI().addItem({'Title':    '...load more',
                                   'mode':     'list_series',
-                                  'showtype': media_type,
-                                  'filterx':  filterx,
-                                  'offset':   str(offset)})
+                                  'showtype': args.showtype,
+                                  'filterx':  args.filterx,
+                                  'offset':   offset})
 
         crm.UI().endofdirectory('none')
 
 
-    def list_categories(self, title, media_type, filterx):
-        options = {'media_type': media_type.lower()}
+    def list_categories(self, args):
+        options = {'media_type': args.showtype.lower()}
         request = self.makeAPIRequest('categories', options)
 
         if request['error'] is False:
-            if filterx == 'genre':
-                if 'genre' in request['data']:
-                    for genre in request['data']['genre']:
-                        crm.UI().addItem({'Title':    genre['label'].encode("utf8"),
-                                          'mode':     'list_series',
-                                          'showtype': media_type,
-                                          'filterx':  'tag:' + genre['tag']},
-                                          True)
-
-            if filterx == 'season':
-                if 'season' in request['data']:
-                    for season in request['data']['season']:
-                        crm.UI().addItem({'Title':    season['label'].encode("utf8"),
-                                          'mode':     'list_series',
-                                          'showtype': media_type,
-                                          'filterx':  'tag:' + season['tag']},
-                                          True)
+            for i in request['data'][args.filterx]:
+                crm.UI().addItem({'Title':    i['label'].encode("utf8"),
+                                  'mode':     'list_series',
+                                  'showtype': args.showtype,
+                                  'filterx':  'tag:' + i['tag']},
+                                  True)
 
         crm.UI().endofdirectory('none')
 
 
-    def list_collections(self, series_id, series_name, count, thumb, fanart):
+    def list_collections(self, args):
         fields  = "".join(["collection.collection_id,",
                            "collection.season,",
                            "collection.name,",
                            "collection.description,",
                            "collection.complete,",
                            "collection.media_count"])
-        options = {'series_id': series_id,
+        options = {'series_id': args.series_id,
                    'fields':    fields,
                    'sort':      'desc',
-                   'limit':     count}
+                   'limit':     args.count}
 
         request = self.makeAPIRequest('list_collections', options)
 
         if request['error'] is False:
             if len(request['data']) <= 1:
                 for collection in request['data']:
-                    complete = '1' if collection['complete'] else '0'
-                    return self.list_media(collection['collection_id'],
-                                           series_name,
-                                           count,
-                                           complete,
-                                           '1',
-                                           fanart)
+                    args.complete = '1' if collection['complete'] else '0'
+                    args.id       = collection['collection_id']
+
+                    return self.list_media(args)
             else:
                 for collection in request['data']:
                     complete = '1' if collection['complete'] else '0'
                     crm.UI().addItem({'Title':        collection['name'].encode("utf8"),
-                                      'filterx':      series_name,
+                                      'filterx':      args.name,
                                       'mode':         'list_media',
-                                      'count':        str(count),
+                                      'count':        str(args.count),
                                       'id':           collection['collection_id'],
                                       'plot':         collection['description'].encode("utf8"),
                                       'complete':     complete,
                                       'season':       str(collection['season']),
-                                      'series_id':    series_id,
-                                      'Thumb':        thumb,
-                                      'Fanart_Image': fanart},
+                                      'series_id':    args.series_id,
+                                      'Thumb':        args.icon,
+                                      'Fanart_Image': args.fanart},
                                       True)
 
         crm.UI().endofdirectory('none')
 
 
-    def list_media(self, collection_id, series_name, count, complete, season, fanart):
-        sort    = 'asc' if complete is '1' else 'desc'
+    def list_media(self, args):
+        sort    = 'asc' if args.complete is '1' else 'desc'
         fields  = "".join(["media.episode_number,",
                            "media.name,",
                            "media.description,",
@@ -596,7 +582,7 @@ class CrunchyJSON(object):
                            "image.fwidestar_url,",
                            "series.landscape_image,",
                            "image.full_url"])
-        options = {'collection_id': collection_id,
+        options = {'collection_id': args.id,
                    'fields':        fields,
                    'sort':          sort,
                    'limit':         '256'}
@@ -605,10 +591,10 @@ class CrunchyJSON(object):
 
         if request['error'] is False:
             return self.list_media_items(request['data'],
-                                         series_name,
-                                         season,
+                                         args.name,
+                                         args.season,
                                          'normal',
-                                         fanart)
+                                         args.fanart)
 
 
     def list_media_items(self, request, series_name, season, mode, fanart):
@@ -878,7 +864,7 @@ class CrunchyJSON(object):
                 crm.UI().endofdirectory('none')
 
 
-    def startPlayback(self, Title, media_id, duration, Thumb):
+    def startPlayback(self, args):
         """Play video stream with selected quality.
 
         """
@@ -892,7 +878,7 @@ class CrunchyJSON(object):
                           "media.url,",
                           "media.stream_data"])
 
-        values = {'media_id': media_id,
+        values = {'media_id': args.id,
                   'fields':   fields}
 
         request = self.makeAPIRequest('info', values)
@@ -933,11 +919,11 @@ class CrunchyJSON(object):
                 else:
                     url = allurl['low']
 
-                item = xbmcgui.ListItem(Title, path=url)
-                item.setInfo(type="Video", infoLabels={"Title":     Title,
+                item = xbmcgui.ListItem(args.name, path=url)
+                item.setInfo(type="Video", infoLabels={"Title":     args.name,
                                                        "playcount": playcount})
-                item.setThumbnailImage(Thumb)
-                item.setProperty('TotalTime',  duration)
+                item.setThumbnailImage(args.icon)
+                item.setProperty('TotalTime',  args.duration)
                 item.setProperty('ResumeTime', resumetime)
 
                 log("CR: startPlayback: url = %s" % url)
@@ -970,7 +956,7 @@ class CrunchyJSON(object):
                         timeplayed = str(int(player.getTime()))
 
                         values = {'event':      'playback_status',
-                                  'media_id':   media_id,
+                                  'media_id':   args.id,
                                   'playhead':   timeplayed}
 
                         request = self.makeAPIRequest('log', values)
