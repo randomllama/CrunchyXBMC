@@ -151,7 +151,7 @@ class UI(object):
 
         else:
             if (self.main.args.mode is not None and
-                self.main.args.mode in 'list_coll|list_series'):
+                self.main.args.mode in 'list_coll|list_series|queue'):
 
                 if queued:
                     cm.insert(1, ('Dequeue Series', 'XBMC.RunPlugin(%s)' % s2))
