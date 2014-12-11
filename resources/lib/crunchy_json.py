@@ -445,7 +445,7 @@ class CrunchyJSON(object):
                            "image.large_url,",
                            "series.landscape_image,",
                            "image.full_url"])
-        options = {'media_type': args.showtype.lower(),
+        options = {'media_type': args.media_type.lower(),
                    'filter':     args.filterx,
                    'fields':     fields,
                    'limit':      '64',
@@ -506,11 +506,11 @@ class CrunchyJSON(object):
 
             if counter >= 64:
                 offset = str(int(args.offset) + counter)
-                UI.addItem({'Title':    '...load more',
-                            'mode':     'list_series',
-                            'showtype': args.showtype,
-                            'filterx':  args.filterx,
-                            'offset':   offset})
+                UI.addItem({'Title':      '...load more',
+                            'mode':       'list_series',
+                            'media_type': args.media_type,
+                            'filterx':    args.filterx,
+                            'offset':     offset})
 
         UI.endofdirectory('none')
 
@@ -518,16 +518,16 @@ class CrunchyJSON(object):
     def list_categories(self, args):
         UI = crm.UI()
 
-        options = {'media_type': args.showtype.lower()}
+        options = {'media_type': args.media_type.lower()}
 
         request = self.makeAPIRequest('categories', options)
 
         if request['error'] is False:
             for i in request['data'][args.filterx]:
-                UI.addItem({'Title':    i['label'].encode("utf8"),
-                            'mode':     'list_series',
-                            'showtype': args.showtype,
-                            'filterx':  'tag:' + i['tag']},
+                UI.addItem({'Title':      i['label'].encode("utf8"),
+                            'mode':       'list_series',
+                            'media_type': args.media_type,
+                            'filterx':    'tag:' + i['tag']},
                            isFolder=True)
 
         UI.endofdirectory('none')
@@ -905,6 +905,68 @@ class CrunchyJSON(object):
 
         return [col['series']['series_id']
                     for col in request['data']]
+
+
+    def add_to_queue(self, args):
+        """Add selected video series to queue at Crunchyroll.
+
+        """
+        # Get series_id
+        if args.series_id is None:
+            options = {'media_id': args.id,
+                       'fields':   "series.series_id"}
+            request = self.makeAPIRequest('info', options)
+
+            series_id = request['data']['series_id']
+        else:
+            series_id = args.series_id
+
+        # Add the series to queue at CR if it is not there already
+        options = {'series_id': series_id,
+                   'fields':    "series.series_id"}
+        request = self.makeAPIRequest('queue', options)
+
+        for col in request['data']:
+            if series_id == col['series']['series_id']:
+                return
+
+        options = {'series_id': series_id}
+
+        request = self.makeAPIRequest('add_to_queue', options)
+
+        log("CR: add_to_queue: request['error'] = " + str(request['error']))
+
+
+    def remove_from_queue(self, args):
+        """Remove selected video series from queue at Crunchyroll.
+
+        """
+        # Get series_id
+        if args.series_id is None:
+            options = {'media_id': args.id,
+                       'fields':   "series.series_id"}
+            request = self.makeAPIRequest('info', options)
+
+            series_id = request['data']['series_id']
+        else:
+            series_id = args.series_id
+
+        # Remove the series from queue at CR if it is there
+        options = {'series_id': series_id,
+                   'fields':    "series.series_id"}
+        request = self.makeAPIRequest('queue', options)
+
+        for col in request['data']:
+            if series_id == col['series']['series_id']:
+                options = {'series_id': series_id}
+
+                request = self.makeAPIRequest('remove_from_queue', options)
+
+                log("CR: remove_from_queue: request['error'] = "
+                    + str(request['error']))
+
+        # Refresh directory listing
+        xbmc.executebuiltin('XBMC.Container.Refresh')
 
 
     def startPlayback(self, args):
