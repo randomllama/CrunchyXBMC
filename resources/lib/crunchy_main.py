@@ -30,15 +30,17 @@ from crunchy_json import log
 
 
 
-_addon = sys.modules['__main__'].__settings__
-_lang  = sys.modules['__main__'].__language__
-_id    = _addon.getAddonInfo('id')
-
-
-
 class updateArgs(object):
 
     def __init__(self, *args, **kwargs):
+        """Initialize arguments object.
+
+        Hold also references to the addon which can't be kept at module level.
+        """
+        self._addon = sys.modules['__main__'].__settings__
+        self._lang  = sys.modules['__main__'].__language__
+        self._id    = self._addon.getAddonInfo('id')
+
         for key, value in kwargs.iteritems():
             if value == 'None':
                 kwargs[key] = None
@@ -84,7 +86,7 @@ def addItem(args,
     info.setdefault('url',          'None')
     info.setdefault('Thumb',        'None')
     info.setdefault('Fanart_Image',
-                    xbmc.translatePath(_addon.getAddonInfo('fanart')))
+                    xbmc.translatePath(args._addon.getAddonInfo('fanart')))
     info.setdefault('mode',         'None')
     info.setdefault('count',        '0')
     info.setdefault('filterx',      'None')
@@ -135,7 +137,7 @@ def addItem(args,
     s1  = re.sub(rex, 'add_to_queue',      u)
     s2  = re.sub(rex, 'remove_from_queue', u)
 
-    cm = [('Add-on settings', 'XBMC.Addon.OpenSettings(%s)' % _id)]
+    cm = [('Add-on settings', 'XBMC.Addon.OpenSettings(%s)' % args._id)]
 
     if (args.mode is not None and
         args.mode not in 'Channels|list_categories'):
@@ -176,15 +178,17 @@ def showMain(args):
     """Show main menu.
 
     """
-    change_language = _addon.getSetting("change_language")
+    change_language = args._addon.getSetting("change_language")
 
-    if crj.CrunchyJSON() is False:
+    if crj.loadShelf(args) is False:
         addItem(args,
                 {'Title': 'Session Failed: Check Login'})
         endofdirectory()
     else:
         if change_language != "0":
-            crj.CrunchyJSON().changeLocale()
+            crj.changeLocale()
+
+        _lang = args._lang
 
         Anime   = _lang(30100).encode("utf8")
         Drama   = _lang(30104).encode("utf8")
@@ -212,6 +216,8 @@ def channels(args):
     """Show Crunchyroll channels.
 
     """
+    _lang = args._lang
+
     popular         = _lang(30103).encode("utf8")
     Simulcasts      = _lang(30106).encode("utf8")
     Recently_Added  = _lang(30102).encode("utf8")
@@ -264,42 +270,42 @@ def json_list_series(args):
     """List series.
 
     """
-    crj.CrunchyJSON().list_series(args)
+    crj.list_series(args)
 
 
 def json_list_cat(args):
     """List categories.
 
     """
-    crj.CrunchyJSON().list_categories(args)
+    crj.list_categories(args)
 
 
 def json_list_collection(args):
     """List collections.
 
     """
-    crj.CrunchyJSON().list_collections(args)
+    crj.list_collections(args)
 
 
 def json_list_media(args):
     """List episodes.
 
     """
-    crj.CrunchyJSON().list_media(args)
+    crj.list_media(args)
 
 
 def json_History(args):
     """Display Crunchyroll history.
 
     """
-    crj.CrunchyJSON().History(args)
+    crj.History(args)
 
 
 def queue(args):
     """Display Crunchyroll queue.
 
     """
-    crj.CrunchyJSON().Queue(args)
+    crj.Queue(args)
 
 
 def add_to_queue(args):
@@ -320,14 +326,14 @@ def startVideo(args):
     """Start video playback.
 
     """
-    crj.CrunchyJSON().startPlayback(args)
+    crj.startPlayback(args)
 
 
 def Fail(args):
     """Unrecognized mode found.
 
     """
-    badstuff = _lang(30207).encode("utf8")
+    badstuff = args._lang(30207).encode("utf8")
 
     addItem(args,
             {'Title': badstuff,
@@ -399,9 +405,9 @@ def main():
     """Main function for the addon.
 
     """
-    crj.CrunchyJSON()
-
     args = parseArgs()
+
+    crj.loadShelf(args)
 
     xbmcplugin.setContent(int(sys.argv[1]), 'movies')
 
