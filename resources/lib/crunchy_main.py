@@ -79,46 +79,46 @@ class UI(object):
                 rex=re.compile(r'(?<=mode=)[^&]*')):
         # Defaults in dict. Use 'None' instead of None so it is compatible for
         # quote_plus in parseArgs.
-        info.setdefault('url',       'None')
-        info.setdefault('Thumb',     'None')
+        info.setdefault('url',          'None')
+        info.setdefault('Thumb',        'None')
         info.setdefault('Fanart_Image',
                         xbmc.translatePath(self._addon.getAddonInfo('fanart')))
-        info.setdefault('mode',      'None')
-        info.setdefault('count',     '0')
-        info.setdefault('filterx',   'None')
-        info.setdefault('id',        'None')
-        info.setdefault('series_id', 'None')
-        info.setdefault('offset',    '0')
-        info.setdefault('season',    '1')
-        info.setdefault('series_id', '0')
-        info.setdefault('page_url',  'None')
-        info.setdefault('complete',  'True')
-        info.setdefault('showtype',  'None')
-        info.setdefault('Title',     'None')
-        info.setdefault('year',      '0')
-        info.setdefault('playhead',  '0')
-        info.setdefault('duration',  '0')
-        info.setdefault('plot',      'None')
+        info.setdefault('mode',         'None')
+        info.setdefault('count',        '0')
+        info.setdefault('filterx',      'None')
+        info.setdefault('id',           'None')
+        info.setdefault('series_id',    'None')
+        info.setdefault('offset',       '0')
+        info.setdefault('season',       '1')
+        info.setdefault('series_id',    '0')
+        info.setdefault('page_url',     'None')
+        info.setdefault('complete',     'True')
+        info.setdefault('media_type',   'None')
+        info.setdefault('Title',        'None')
+        info.setdefault('year',         '0')
+        info.setdefault('playhead',     '0')
+        info.setdefault('duration',     '0')
+        info.setdefault('plot',         'None')
 
         # Create params for xbmcplugin module
-        u = sys.argv[0]   +\
-            '?url='       + urllib.quote_plus(info['url'])          +\
-            '&mode='      + urllib.quote_plus(info['mode'])         +\
-            '&name='      + urllib.quote_plus(info['Title'])        +\
-            '&id='        + urllib.quote_plus(info['id'])           +\
-            '&count='     + urllib.quote_plus(info['count'])        +\
-            '&series_id=' + urllib.quote_plus(info['series_id'])    +\
-            '&filterx='   + urllib.quote_plus(info['filterx'])      +\
-            '&offset='    + urllib.quote_plus(info['offset'])       +\
-            '&icon='      + urllib.quote_plus(info['Thumb'])        +\
-            '&complete='  + urllib.quote_plus(info['complete'])     +\
-            '&fanart='    + urllib.quote_plus(info['Fanart_Image']) +\
-            '&season='    + urllib.quote_plus(info['season'])       +\
-            '&showtype='  + urllib.quote_plus(info['showtype'])     +\
-            '&year='      + urllib.quote_plus(info['year'])         +\
-            '&playhead='  + urllib.quote_plus(info['playhead'])     +\
-            '&duration='  + urllib.quote_plus(info['duration'])     +\
-            '&plot='      + urllib.quote_plus(info['plot']          +'%20')
+        u = sys.argv[0]    +\
+            '?url='        + urllib.quote_plus(info['url'])          +\
+            '&mode='       + urllib.quote_plus(info['mode'])         +\
+            '&name='       + urllib.quote_plus(info['Title'])        +\
+            '&id='         + urllib.quote_plus(info['id'])           +\
+            '&count='      + urllib.quote_plus(info['count'])        +\
+            '&series_id='  + urllib.quote_plus(info['series_id'])    +\
+            '&filterx='    + urllib.quote_plus(info['filterx'])      +\
+            '&offset='     + urllib.quote_plus(info['offset'])       +\
+            '&icon='       + urllib.quote_plus(info['Thumb'])        +\
+            '&complete='   + urllib.quote_plus(info['complete'])     +\
+            '&fanart='     + urllib.quote_plus(info['Fanart_Image']) +\
+            '&season='     + urllib.quote_plus(info['season'])       +\
+            '&media_type=' + urllib.quote_plus(info['media_type'])   +\
+            '&year='       + urllib.quote_plus(info['year'])         +\
+            '&playhead='   + urllib.quote_plus(info['playhead'])     +\
+            '&duration='   + urllib.quote_plus(info['duration'])     +\
+            '&plot='       + urllib.quote_plus(info['plot']          +'%20')
 
         # Create list item
         li = xbmcgui.ListItem(label          = info['Title'],
@@ -185,16 +185,16 @@ class UI(object):
             Queue   = self._lang(30105).encode("utf8")
             History = self._lang(30111).encode("utf8")
 
-            self.addItem({'Title':    Queue,
-                          'mode':     'queue'})
-            self.addItem({'Title':    History,
-                          'mode':     'History'})
-            self.addItem({'Title':    Anime,
-                          'mode':     'Channels',
-                          'showtype': 'Anime'})
-            self.addItem({'Title':    Drama,
-                          'mode':     'Channels',
-                          'showtype': 'Drama'})
+            self.addItem({'Title':      Queue,
+                          'mode':       'queue'})
+            self.addItem({'Title':      History,
+                          'mode':       'History'})
+            self.addItem({'Title':      Anime,
+                          'mode':       'Channels',
+                          'media_type': 'Anime'})
+            self.addItem({'Title':      Drama,
+                          'mode':       'Channels',
+                          'media_type': 'Drama'})
             self.endofdirectory()
 
 
@@ -206,38 +206,38 @@ class UI(object):
         Browse_by_Genre = self._lang(30107).encode("utf8")
         seasons         = self._lang(30110).encode("utf8")
 
-        showtype        = self.main.args.showtype
+        media_type      = self.main.args.media_type
 
-        self.addItem({'Title':    popular,
-                      'mode':     'list_series',
-                      'showtype': showtype,
-                      'filterx':  'popular',
-                      'offset':   '0'})
-        self.addItem({'Title':    Simulcasts,
-                      'mode':     'list_series',
-                      'showtype': showtype,
-                      'filterx':  'simulcast',
-                      'offset':   '0'})
-        self.addItem({'Title':    Recently_Added,
-                      'mode':     'list_series',
-                      'showtype': showtype,
-                      'filterx':  'updated',
-                      'offset':   '0'})
-        self.addItem({'Title':    alpha,
-                      'mode':     'list_series',
-                      'showtype': showtype,
-                      'filterx':  'alpha',
-                      'offset':   '0'})
-        self.addItem({'Title':    Browse_by_Genre,
-                      'mode':     'list_categories',
-                      'showtype': showtype,
-                      'filterx':  'genre',
-                      'offset':   '0'})
-        self.addItem({'Title':    seasons,
-                      'mode':     'list_categories',
-                      'showtype': showtype,
-                      'filterx':  'season',
-                      'offset':   '0'})
+        self.addItem({'Title':      popular,
+                      'mode':       'list_series',
+                      'media_type': media_type,
+                      'filterx':    'popular',
+                      'offset':     '0'})
+        self.addItem({'Title':      Simulcasts,
+                      'mode':       'list_series',
+                      'media_type': media_type,
+                      'filterx':    'simulcast',
+                      'offset':     '0'})
+        self.addItem({'Title':      Recently_Added,
+                      'mode':       'list_series',
+                      'media_type': media_type,
+                      'filterx':    'updated',
+                      'offset':     '0'})
+        self.addItem({'Title':      alpha,
+                      'mode':       'list_series',
+                      'media_type': media_type,
+                      'filterx':    'alpha',
+                      'offset':     '0'})
+        self.addItem({'Title':      Browse_by_Genre,
+                      'mode':       'list_categories',
+                      'media_type': media_type,
+                      'filterx':    'genre',
+                      'offset':     '0'})
+        self.addItem({'Title':      seasons,
+                      'mode':       'list_categories',
+                      'media_type': media_type,
+                      'filterx':    'season',
+                      'offset':     '0'})
         self.endofdirectory()
 
 

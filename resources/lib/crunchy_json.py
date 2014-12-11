@@ -445,7 +445,7 @@ class CrunchyJSON(object):
                            "image.large_url,",
                            "series.landscape_image,",
                            "image.full_url"])
-        options = {'media_type': args.showtype.lower(),
+        options = {'media_type': args.media_type.lower(),
                    'filter':     args.filterx,
                    'fields':     fields,
                    'limit':      '64',
@@ -506,11 +506,11 @@ class CrunchyJSON(object):
 
             if counter >= 64:
                 offset = str(int(args.offset) + counter)
-                UI.addItem({'Title':    '...load more',
-                            'mode':     'list_series',
-                            'showtype': args.showtype,
-                            'filterx':  args.filterx,
-                            'offset':   offset})
+                UI.addItem({'Title':      '...load more',
+                            'mode':       'list_series',
+                            'media_type': args.media_type,
+                            'filterx':    args.filterx,
+                            'offset':     offset})
 
         UI.endofdirectory('none')
 
@@ -518,16 +518,16 @@ class CrunchyJSON(object):
     def list_categories(self, args):
         UI = crm.UI()
 
-        options = {'media_type': args.showtype.lower()}
+        options = {'media_type': args.media_type.lower()}
 
         request = self.makeAPIRequest('categories', options)
 
         if request['error'] is False:
             for i in request['data'][args.filterx]:
-                UI.addItem({'Title':    i['label'].encode("utf8"),
-                            'mode':     'list_series',
-                            'showtype': args.showtype,
-                            'filterx':  'tag:' + i['tag']},
+                UI.addItem({'Title':      i['label'].encode("utf8"),
+                            'mode':       'list_series',
+                            'media_type': args.media_type,
+                            'filterx':    'tag:' + i['tag']},
                            isFolder=True)
 
         UI.endofdirectory('none')
