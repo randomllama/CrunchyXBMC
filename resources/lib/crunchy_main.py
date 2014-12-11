@@ -44,7 +44,7 @@ class updateArgs(object):
 
 class UI(object):
 
-    def __init__(self, addon=None):
+    def __init__(self):
         self.main   = Main(checkMode=False)
         self._addon = sys.modules['__main__'].__settings__
         self._lang  = sys.modules['__main__'].__language__
@@ -75,6 +75,7 @@ class UI(object):
                 info,
                 isFolder=True,
                 total_items=0,
+                queued=False,
                 rex=re.compile(r'(?<=mode=)[^&]*')):
         # Defaults in dict. Use 'None' instead of None so it is compatible for
         # quote_plus in parseArgs.
@@ -143,19 +144,19 @@ class UI(object):
             # Let XBMC know this can be played, unlike a folder
             li.setProperty('IsPlayable', 'true')
 
-            cm.insert(1, ('Dequeue Series', 'XBMC.RunPlugin(%s)' % s2))
-            cm.insert(1, ('Enqueue Series', 'XBMC.RunPlugin(%s)' % s1))
+            if queued:
+                cm.insert(1, ('Dequeue Series', 'XBMC.RunPlugin(%s)' % s2))
+            else:
+                cm.insert(1, ('Enqueue Series', 'XBMC.RunPlugin(%s)' % s1))
 
         else:
             if (self.main.args.mode is not None and
-                self.main.args.mode in 'list_coll|list_series|queue'):
-
-                cm.insert(1, ('Dequeue Series', 'XBMC.RunPlugin(%s)' % s2))
-
-            if (self.main.args.mode is not None and
                 self.main.args.mode in 'list_coll|list_series'):
 
-                cm.insert(1, ('Enqueue Series', 'XBMC.RunPlugin(%s)' % s1))
+                if queued:
+                    cm.insert(1, ('Dequeue Series', 'XBMC.RunPlugin(%s)' % s2))
+                else:
+                    cm.insert(1, ('Enqueue Series', 'XBMC.RunPlugin(%s)' % s1))
 
         cm.append(('Toggle debug', 'XBMC.ToggleDebug'))
 
@@ -241,33 +242,31 @@ class UI(object):
 
 
     def json_list_series(self):
-        crj.CrunchyJSON().list_series(self.main.args.name,
-                                      self.main.args.showtype,
-                                      self.main.args.filterx,
-                                      self.main.args.offset)
+        """List series.
+
+        """
+        crj.CrunchyJSON().list_series(self.main.args)
 
 
     def json_list_cat(self):
-        crj.CrunchyJSON().list_categories(self.main.args.name,
-                                          self.main.args.showtype,
-                                          self.main.args.filterx)
+        """List categories.
+
+        """
+        crj.CrunchyJSON().list_categories(self.main.args)
 
 
     def json_list_collection(self):
-        crj.CrunchyJSON().list_collections(self.main.args.series_id,
-                                           self.main.args.name,
-                                           self.main.args.count,
-                                           self.main.args.icon,
-                                           self.main.args.fanart)
+        """List collections.
+
+        """
+        crj.CrunchyJSON().list_collections(self.main.args)
 
 
     def json_list_media(self):
-        crj.CrunchyJSON().list_media(self.main.args.id,
-                                     self.main.args.filterx,
-                                     self.main.args.count,
-                                     self.main.args.complete,
-                                     self.main.args.season,
-                                     self.main.args.fanart)
+        """List episodes.
+
+        """
+        crj.CrunchyJSON().list_media(self.main.args)
 
 
     def json_History(self):
@@ -288,11 +287,13 @@ class UI(object):
         """Add selected video series to queue at Crunchyroll.
 
         """
+        crunchy = crj.CrunchyJSON()
+
         # Get series_id
         if self.main.args.series_id is None:
             options = {'media_id': self.main.args.id,
                        'fields':   "series.series_id"}
-            request = crj.CrunchyJSON.makeAPIRequest(crj.CrunchyJSON(),
+            request = crj.CrunchyJSON.makeAPIRequest(crunchy,
                                                      'info',
                                                      options)
 
@@ -303,7 +304,7 @@ class UI(object):
         # Add the series to queue at CR if it is not there already
         options = {'series_id': series_id,
                    'fields':    "series.series_id"}
-        request = crj.CrunchyJSON.makeAPIRequest(crj.CrunchyJSON(),
+        request = crj.CrunchyJSON.makeAPIRequest(crunchy,
                                                  'queue',
                                                  options)
 
@@ -313,7 +314,7 @@ class UI(object):
 
         options = {'series_id': series_id}
 
-        request = crj.CrunchyJSON.makeAPIRequest(crj.CrunchyJSON(),
+        request = crj.CrunchyJSON.makeAPIRequest(crunchy,
                                                  'add_to_queue',
                                                  options)
 
@@ -324,11 +325,13 @@ class UI(object):
         """Remove selected video series from queue at Crunchyroll.
 
         """
+        crunchy = crj.CrunchyJSON()
+
         # Get series_id
         if self.main.args.series_id is None:
             options = {'media_id': self.main.args.id,
                        'fields':   "series.series_id"}
-            request = crj.CrunchyJSON.makeAPIRequest(crj.CrunchyJSON(),
+            request = crj.CrunchyJSON.makeAPIRequest(crunchy,
                                                      'info',
                                                      options)
 
@@ -339,7 +342,7 @@ class UI(object):
         # Remove the series from queue at CR if it is there
         options = {'series_id': series_id,
                    'fields':    "series.series_id"}
-        request = crj.CrunchyJSON.makeAPIRequest(crj.CrunchyJSON(),
+        request = crj.CrunchyJSON.makeAPIRequest(crunchy,
                                                  'queue',
                                                  options)
 
@@ -347,7 +350,7 @@ class UI(object):
             if series_id == col['series']['series_id']:
                 options = {'series_id': series_id}
 
-                request = crj.CrunchyJSON.makeAPIRequest(crj.CrunchyJSON(),
+                request = crj.CrunchyJSON.makeAPIRequest(crunchy,
                                                          'remove_from_queue',
                                                          options)
 
@@ -359,10 +362,10 @@ class UI(object):
 
 
     def startVideo(self):
-        crj.CrunchyJSON().startPlayback(self.main.args.name,
-                                        self.main.args.id,
-                                        self.main.args.duration,
-                                        self.main.args.icon)
+        """Start video playback.
+
+        """
+        crj.CrunchyJSON().startPlayback(self.main.args)
 
 
     def Fail(self):
