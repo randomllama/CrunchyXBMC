@@ -38,7 +38,7 @@ class updateArgs(object):
         Hold also references to the addon which can't be kept at module level.
         """
         self._addon = sys.modules['__main__'].__settings__
-        self._lang  = sys.modules['__main__'].__language__
+        self._lang  = encode(sys.modules['__main__'].__language__)
         self._id    = self._addon.getAddonInfo('id')
 
         for key, value in kwargs.iteritems():
@@ -48,6 +48,15 @@ class updateArgs(object):
                 kwargs[key] = urllib.unquote_plus(kwargs[key])
         self.__dict__.update(kwargs)
 
+
+
+def encode(f):
+    """Decorator for encoding strings.
+
+    """
+    def lang_encoded(*args):
+        return f(*args).encode('utf8')
+    return lang_encoded
 
 
 def endofdirectory(sortMethod='none'):
@@ -188,12 +197,10 @@ def showMain(args):
         if change_language != "0":
             crj.changeLocale()
 
-        _lang = args._lang
-
-        Anime   = _lang(30100).encode("utf8")
-        Drama   = _lang(30104).encode("utf8")
-        Queue   = _lang(30105).encode("utf8")
-        History = _lang(30111).encode("utf8")
+        Anime   = args._lang(30100)
+        Drama   = args._lang(30104)
+        Queue   = args._lang(30105)
+        History = args._lang(30111)
 
         addItem(args,
                 {'Title':      Queue,
@@ -216,14 +223,12 @@ def channels(args):
     """Show Crunchyroll channels.
 
     """
-    _lang = args._lang
-
-    popular         = _lang(30103).encode("utf8")
-    Simulcasts      = _lang(30106).encode("utf8")
-    Recently_Added  = _lang(30102).encode("utf8")
-    alpha           = _lang(30112).encode("utf8")
-    Browse_by_Genre = _lang(30107).encode("utf8")
-    seasons         = _lang(30110).encode("utf8")
+    popular         = args._lang(30103)
+    Simulcasts      = args._lang(30106)
+    Recently_Added  = args._lang(30102)
+    alpha           = args._lang(30112)
+    Browse_by_Genre = args._lang(30107)
+    seasons         = args._lang(30110)
 
     media_type      = args.media_type
 
@@ -333,7 +338,7 @@ def Fail(args):
     """Unrecognized mode found.
 
     """
-    badstuff = args._lang(30207).encode("utf8")
+    badstuff = args._lang(30207)
 
     addItem(args,
             {'Title': badstuff,

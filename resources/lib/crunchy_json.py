@@ -50,16 +50,13 @@ __XBMCBUILD__ = xbmc.getInfoLabel("System.BuildVersion") + " " + sys.platform
 
 
 def loadShelf(args):
-    _lang = args._lang
-    _addon = args._addon
+    notice_msg     = args._lang(30200)
+    setup_msg      = args._lang(30203)
+    acc_type_error = args._lang(30312)
 
-    notice_msg     = _lang(30200).encode("utf8")
-    setup_msg      = _lang(30203).encode("utf8")
-    acc_type_error = _lang(30312).encode("utf8")
+    change_language = args._addon.getSetting("change_language")
 
-    change_language = _addon.getSetting("change_language")
-
-    base_path = xbmc.translatePath(_addon.getAddonInfo('profile')).decode('utf-8')
+    base_path = xbmc.translatePath(args._addon.getAddonInfo('profile')).decode('utf-8')
 
     base_cache_path = os.path.join(base_path, "cache")
     if not os.path.exists(base_cache_path):
@@ -96,8 +93,8 @@ def loadShelf(args):
         elif change_language == "9":
             userData['API_LOCALE']  = "esES"
 
-        userData['username'] = _addon.getSetting("crunchy_username")
-        userData['password'] = _addon.getSetting("crunchy_password")
+        userData['username'] = args._addon.getSetting("crunchy_username")
+        userData['password'] = args._addon.getSetting("crunchy_password")
 
         if 'device_id' not in userData:
             char_set  = string.ascii_letters + string.digits
@@ -1170,14 +1167,12 @@ def makeAPIRequest(method, options):
 
 
 def changeLocale(args):
-    _lang = args._lang
-
     cj           = cookielib.LWPCookieJar()
 
-    notice      = _lang(30200).encode("utf8")
-    notice_msg  = _lang(30211).encode("utf8")
-    notice_err  = _lang(30206).encode("utf8")
-    notice_done = _lang(30310).encode("utf8")
+    notice      = args._lang(30200)
+    notice_msg  = args._lang(30211)
+    notice_err  = args._lang(30206)
+    notice_done = args._lang(30310)
 
     icon = xbmc.translatePath(args._addon.getAddonInfo('icon'))
 
@@ -1229,7 +1224,7 @@ def changeLocale(args):
                         + notice_done + ',5000,' + icon + ')')
     log("CR: Disabling the force change language setting")
 
-    _addon.setSetting(id="change_language", value="0")
+    args._addon.setSetting(id="change_language", value="0")
 
 
 def usage_reporting():
