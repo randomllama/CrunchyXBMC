@@ -907,6 +907,68 @@ class CrunchyJSON(object):
                     for col in request['data']]
 
 
+    def add_to_queue(self, args):
+        """Add selected video series to queue at Crunchyroll.
+
+        """
+        # Get series_id
+        if args.series_id is None:
+            options = {'media_id': args.id,
+                       'fields':   "series.series_id"}
+            request = self.makeAPIRequest('info', options)
+
+            series_id = request['data']['series_id']
+        else:
+            series_id = args.series_id
+
+        # Add the series to queue at CR if it is not there already
+        options = {'series_id': series_id,
+                   'fields':    "series.series_id"}
+        request = self.makeAPIRequest('queue', options)
+
+        for col in request['data']:
+            if series_id == col['series']['series_id']:
+                return
+
+        options = {'series_id': series_id}
+
+        request = self.makeAPIRequest('add_to_queue', options)
+
+        log("CR: add_to_queue: request['error'] = " + str(request['error']))
+
+
+    def remove_from_queue(self, args):
+        """Remove selected video series from queue at Crunchyroll.
+
+        """
+        # Get series_id
+        if args.series_id is None:
+            options = {'media_id': args.id,
+                       'fields':   "series.series_id"}
+            request = self.makeAPIRequest('info', options)
+
+            series_id = request['data']['series_id']
+        else:
+            series_id = args.series_id
+
+        # Remove the series from queue at CR if it is there
+        options = {'series_id': series_id,
+                   'fields':    "series.series_id"}
+        request = self.makeAPIRequest('queue', options)
+
+        for col in request['data']:
+            if series_id == col['series']['series_id']:
+                options = {'series_id': series_id}
+
+                request = self.makeAPIRequest('remove_from_queue', options)
+
+                log("CR: remove_from_queue: request['error'] = "
+                    + str(request['error']))
+
+        # Refresh directory listing
+        xbmc.executebuiltin('XBMC.Container.Refresh')
+
+
     def startPlayback(self, args):
         """Play video stream with selected quality.
 

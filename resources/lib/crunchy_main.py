@@ -287,78 +287,14 @@ class UI(object):
         """Add selected video series to queue at Crunchyroll.
 
         """
-        crunchy = crj.CrunchyJSON()
-
-        # Get series_id
-        if self.main.args.series_id is None:
-            options = {'media_id': self.main.args.id,
-                       'fields':   "series.series_id"}
-            request = crj.CrunchyJSON.makeAPIRequest(crunchy,
-                                                     'info',
-                                                     options)
-
-            series_id = request['data']['series_id']
-        else:
-            series_id = self.main.args.series_id
-
-        # Add the series to queue at CR if it is not there already
-        options = {'series_id': series_id,
-                   'fields':    "series.series_id"}
-        request = crj.CrunchyJSON.makeAPIRequest(crunchy,
-                                                 'queue',
-                                                 options)
-
-        for col in request['data']:
-            if series_id == col['series']['series_id']:
-                return
-
-        options = {'series_id': series_id}
-
-        request = crj.CrunchyJSON.makeAPIRequest(crunchy,
-                                                 'add_to_queue',
-                                                 options)
-
-        log("CR: add_to_queue: request['error'] = " + str(request['error']))
+        crj.add_to_queue(self.main.args)
 
 
     def remove_from_queue(self):
         """Remove selected video series from queue at Crunchyroll.
 
         """
-        crunchy = crj.CrunchyJSON()
-
-        # Get series_id
-        if self.main.args.series_id is None:
-            options = {'media_id': self.main.args.id,
-                       'fields':   "series.series_id"}
-            request = crj.CrunchyJSON.makeAPIRequest(crunchy,
-                                                     'info',
-                                                     options)
-
-            series_id = request['data']['series_id']
-        else:
-            series_id = self.main.args.series_id
-
-        # Remove the series from queue at CR if it is there
-        options = {'series_id': series_id,
-                   'fields':    "series.series_id"}
-        request = crj.CrunchyJSON.makeAPIRequest(crunchy,
-                                                 'queue',
-                                                 options)
-
-        for col in request['data']:
-            if series_id == col['series']['series_id']:
-                options = {'series_id': series_id}
-
-                request = crj.CrunchyJSON.makeAPIRequest(crunchy,
-                                                         'remove_from_queue',
-                                                         options)
-
-                log("CR: remove_from_queue: request['error'] = "
-                    + str(request['error']))
-
-        # Refresh directory listing
-        xbmc.executebuiltin('XBMC.Container.Refresh')
+        crj.remove_from_queue(self.main.args)
 
 
     def startVideo(self):
