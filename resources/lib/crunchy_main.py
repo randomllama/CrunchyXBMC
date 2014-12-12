@@ -271,69 +271,6 @@ def channels(args):
     endofdirectory()
 
 
-def json_list_series(args):
-    """List series.
-
-    """
-    crj.list_series(args)
-
-
-def json_list_cat(args):
-    """List categories.
-
-    """
-    crj.list_categories(args)
-
-
-def json_list_collection(args):
-    """List collections.
-
-    """
-    crj.list_collections(args)
-
-
-def json_list_media(args):
-    """List episodes.
-
-    """
-    crj.list_media(args)
-
-
-def json_History(args):
-    """Display Crunchyroll history.
-
-    """
-    crj.History(args)
-
-
-def queue(args):
-    """Display Crunchyroll queue.
-
-    """
-    crj.Queue(args)
-
-
-def add_to_queue(args):
-    """Add selected video series to queue at Crunchyroll.
-
-    """
-    crj.add_to_queue(args)
-
-
-def remove_from_queue(args):
-    """Remove selected video series from queue at Crunchyroll.
-
-    """
-    crj.remove_from_queue(args)
-
-
-def startVideo(args):
-    """Start video playback.
-
-    """
-    crj.startPlayback(args)
-
-
 def Fail(args):
     """Unrecognized mode found.
 
@@ -385,23 +322,23 @@ def checkMode(args):
     elif mode == 'Channels':
         channels(args)
     elif mode == 'list_series':
-        json_list_series(args)
+        crj.list_series(args)
     elif mode == 'list_categories':
-        json_list_cat(args)
+        crj.list_categories(args)
     elif mode == 'list_coll':
-        json_list_collection(args)
+        crj.list_collections(args)
     elif mode == 'list_media':
-        json_list_media(args)
+        crj.list_media(args)
     elif mode == 'History':
-        json_History(args)
+        crj.History(args)
     elif mode == 'queue':
-        queue(args)
+        crj.Queue(args)
     elif mode == 'add_to_queue':
-        add_to_queue(args)
+        crj.add_to_queue(args)
     elif mode == 'remove_from_queue':
-        remove_from_queue(args)
+        crj.remove_from_queue(args)
     elif mode == 'videoplay':
-        startVideo(args)
+        crj.startPlayback(args)
     else:
         Fail(args)
 
