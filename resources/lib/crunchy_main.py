@@ -290,12 +290,10 @@ def parseArgs():
     """Decode arguments.
 
     """
-    # Call updateArgs() with our formatted argv to create self.args object
     if (sys.argv[2]):
-        exec("args = updateArgs(%s')"
-             % (sys.argv[2][1:].replace('&', "',").replace('=', "='")))
+        return updateArgs(**dict([p.split('=')
+                                      for p in sys.argv[2][1:].split('&')]))
 
-        return args
     else:
         # updateArgs will turn the 'None' into None.
         # Don't simply define it as None because unquote_plus in updateArgs
