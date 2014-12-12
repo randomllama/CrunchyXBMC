@@ -30,9 +30,17 @@ from crunchy_json import log
 
 
 
-class updateArgs(object):
+class Args(object):
 
     def __init__(self, *args, **kwargs):
+        """Initialize arguments object.
+
+        Hold also references to the addon which can't be kept at module level.
+        """
+        self._addon = sys.modules['__main__'].__settings__
+        self._lang  = encode(sys.modules['__main__'].__language__)
+        self._id    = self._addon.getAddonInfo('id')
+
         for key, value in kwargs.iteritems():
             if value == 'None':
                 kwargs[key] = None
@@ -42,334 +50,310 @@ class updateArgs(object):
 
 
 
-class UI(object):
+def encode(f):
+    """Decorator for encoding strings.
 
-    def __init__(self):
-        self.main   = Main(checkMode=False)
-        self._addon = sys.modules['__main__'].__settings__
-        self._lang  = sys.modules['__main__'].__language__
-        self._id    = self._addon.getAddonInfo('id')
-        xbmcplugin.setContent(int(sys.argv[1]), 'movies')
-
-
-    def endofdirectory(self, sortMethod='none'):
-        # Set sortmethod to something xbmc can use
-        if sortMethod == 'title':
-            sortMethod = xbmcplugin.SORT_METHOD_LABEL
-        elif sortMethod == 'none':
-            sortMethod = xbmcplugin.SORT_METHOD_NONE
-        elif sortMethod == 'date':
-            sortMethod = xbmcplugin.SORT_METHOD_DATE
-
-        # Sort methods are required in library mode
-        xbmcplugin.addSortMethod(int(sys.argv[1]),
-                                 sortMethod)
-
-        # Let xbmc know the script is done adding items to the list
-        dontAddToHierarchy = False
-        xbmcplugin.endOfDirectory(handle        = int(sys.argv[1]),
-                                  updateListing = dontAddToHierarchy)
+    """
+    def lang_encoded(*args):
+        return f(*args).encode('utf8')
+    return lang_encoded
 
 
-    def addItem(self,
-                info,
-                isFolder=True,
-                total_items=0,
-                queued=False,
-                rex=re.compile(r'(?<=mode=)[^&]*')):
-        # Defaults in dict. Use 'None' instead of None so it is compatible for
-        # quote_plus in parseArgs.
-        info.setdefault('url',          'None')
-        info.setdefault('Thumb',        'None')
-        info.setdefault('Fanart_Image',
-                        xbmc.translatePath(self._addon.getAddonInfo('fanart')))
-        info.setdefault('mode',         'None')
-        info.setdefault('count',        '0')
-        info.setdefault('filterx',      'None')
-        info.setdefault('id',           'None')
-        info.setdefault('series_id',    'None')
-        info.setdefault('offset',       '0')
-        info.setdefault('season',       '1')
-        info.setdefault('series_id',    '0')
-        info.setdefault('page_url',     'None')
-        info.setdefault('complete',     'True')
-        info.setdefault('media_type',   'None')
-        info.setdefault('Title',        'None')
-        info.setdefault('year',         '0')
-        info.setdefault('playhead',     '0')
-        info.setdefault('duration',     '0')
-        info.setdefault('plot',         'None')
+def endofdirectory(sortMethod='none'):
+    """Mark end of directory listing.
 
-        # Create params for xbmcplugin module
-        u = sys.argv[0]    +\
-            '?url='        + urllib.quote_plus(info['url'])          +\
-            '&mode='       + urllib.quote_plus(info['mode'])         +\
-            '&name='       + urllib.quote_plus(info['Title'])        +\
-            '&id='         + urllib.quote_plus(info['id'])           +\
-            '&count='      + urllib.quote_plus(info['count'])        +\
-            '&series_id='  + urllib.quote_plus(info['series_id'])    +\
-            '&filterx='    + urllib.quote_plus(info['filterx'])      +\
-            '&offset='     + urllib.quote_plus(info['offset'])       +\
-            '&icon='       + urllib.quote_plus(info['Thumb'])        +\
-            '&complete='   + urllib.quote_plus(info['complete'])     +\
-            '&fanart='     + urllib.quote_plus(info['Fanart_Image']) +\
-            '&season='     + urllib.quote_plus(info['season'])       +\
-            '&media_type=' + urllib.quote_plus(info['media_type'])   +\
-            '&year='       + urllib.quote_plus(info['year'])         +\
-            '&playhead='   + urllib.quote_plus(info['playhead'])     +\
-            '&duration='   + urllib.quote_plus(info['duration'])     +\
-            '&plot='       + urllib.quote_plus(info['plot']          +'%20')
+    """
+    # Set sortmethod to something xbmc can use
+    if sortMethod == 'title':
+        sortMethod = xbmcplugin.SORT_METHOD_LABEL
+    elif sortMethod == 'none':
+        sortMethod = xbmcplugin.SORT_METHOD_NONE
+    elif sortMethod == 'date':
+        sortMethod = xbmcplugin.SORT_METHOD_DATE
 
-        # Create list item
-        li = xbmcgui.ListItem(label          = info['Title'],
-                              thumbnailImage = info['Thumb'])
-        li.setInfo(type       = "Video",
-                   infoLabels = {"Title": info['Title'],
-                                 "Plot":  info['plot'],
-                                 "Year":  info['year']})
-        li.setProperty("Fanart_Image", info['Fanart_Image'])
+    # Sort methods are required in library mode
+    xbmcplugin.addSortMethod(int(sys.argv[1]),
+                             sortMethod)
 
-        # Add context menu
-        s1  = re.sub(rex, 'add_to_queue',      u)
-        s2  = re.sub(rex, 'remove_from_queue', u)
+    # Let xbmc know the script is done adding items to the list
+    dontAddToHierarchy = False
+    xbmcplugin.endOfDirectory(handle        = int(sys.argv[1]),
+                              updateListing = dontAddToHierarchy)
 
-        cm = [('Add-on settings', 'XBMC.Addon.OpenSettings(%s)' % self._id)]
 
-        if (self.main.args.mode is not None and
-            self.main.args.mode not in 'Channels|list_categories'):
+def add_item(args,
+             info,
+             isFolder=True,
+             total_items=0,
+             queued=False,
+             rex=re.compile(r'(?<=mode=)[^&]*')):
+    """Add item to directory listing.
 
-            cm.insert(0, ('Queue Video', 'XBMC.Action(Queue)'))
+    """
+    # Defaults in dict. Use 'None' instead of None so it is compatible for
+    # quote_plus in parseArgs.
+    info.setdefault('url',          'None')
+    info.setdefault('thumb',        'None')
+    info.setdefault('fanart_image',
+                    xbmc.translatePath(args._addon.getAddonInfo('fanart')))
+    info.setdefault('mode',         'None')
+    info.setdefault('count',        '0')
+    info.setdefault('filterx',      'None')
+    info.setdefault('id',           'None')
+    info.setdefault('series_id',    'None')
+    info.setdefault('offset',       '0')
+    info.setdefault('season',       '1')
+    info.setdefault('series_id',    '0')
+    info.setdefault('page_url',     'None')
+    info.setdefault('complete',     'True')
+    info.setdefault('media_type',   'None')
+    info.setdefault('title',        'None')
+    info.setdefault('year',         '0')
+    info.setdefault('playhead',     '0')
+    info.setdefault('duration',     '0')
+    info.setdefault('plot',         'None')
 
-        if not isFolder:
-            # Let XBMC know this can be played, unlike a folder
-            li.setProperty('IsPlayable', 'true')
+    # Create params for xbmcplugin module
+    u = sys.argv[0]    +\
+        '?url='        + urllib.quote_plus(info['url'])          +\
+        '&mode='       + urllib.quote_plus(info['mode'])         +\
+        '&name='       + urllib.quote_plus(info['title'])        +\
+        '&id='         + urllib.quote_plus(info['id'])           +\
+        '&count='      + urllib.quote_plus(info['count'])        +\
+        '&series_id='  + urllib.quote_plus(info['series_id'])    +\
+        '&filterx='    + urllib.quote_plus(info['filterx'])      +\
+        '&offset='     + urllib.quote_plus(info['offset'])       +\
+        '&icon='       + urllib.quote_plus(info['thumb'])        +\
+        '&complete='   + urllib.quote_plus(info['complete'])     +\
+        '&fanart='     + urllib.quote_plus(info['fanart_image']) +\
+        '&season='     + urllib.quote_plus(info['season'])       +\
+        '&media_type=' + urllib.quote_plus(info['media_type'])   +\
+        '&year='       + urllib.quote_plus(info['year'])         +\
+        '&playhead='   + urllib.quote_plus(info['playhead'])     +\
+        '&duration='   + urllib.quote_plus(info['duration'])     +\
+        '&plot='       + urllib.quote_plus(info['plot']          +'%20')
+
+    # Create list item
+    li = xbmcgui.ListItem(label          = info['title'],
+                          thumbnailImage = info['thumb'])
+    li.setInfo(type       = "Video",
+               infoLabels = {"Title": info['title'],
+                             "Plot":  info['plot'],
+                             "Year":  info['year']})
+    li.setProperty("Fanart_Image", info['fanart_image'])
+
+    # Add context menu
+    s1  = re.sub(rex, 'add_to_queue',      u)
+    s2  = re.sub(rex, 'remove_from_queue', u)
+
+    cm = [('Add-on settings', 'XBMC.Addon.OpenSettings(%s)' % args._id)]
+
+    if (args.mode is not None and
+        args.mode not in 'channels|list_categories'):
+
+        cm.insert(0, ('Queue Video', 'XBMC.Action(Queue)'))
+
+    if not isFolder:
+        # Let XBMC know this can be played, unlike a folder
+        li.setProperty('IsPlayable', 'true')
+
+        if queued:
+            cm.insert(1, ('Dequeue Series', 'XBMC.RunPlugin(%s)' % s2))
+        else:
+            cm.insert(1, ('Enqueue Series', 'XBMC.RunPlugin(%s)' % s1))
+
+    else:
+        if (args.mode is not None and
+            args.mode in 'list_coll|list_series|queue'):
 
             if queued:
                 cm.insert(1, ('Dequeue Series', 'XBMC.RunPlugin(%s)' % s2))
             else:
                 cm.insert(1, ('Enqueue Series', 'XBMC.RunPlugin(%s)' % s1))
 
-        else:
-            if (self.main.args.mode is not None and
-                self.main.args.mode in 'list_coll|list_series|queue'):
+    cm.append(('Toggle debug', 'XBMC.ToggleDebug'))
 
-                if queued:
-                    cm.insert(1, ('Dequeue Series', 'XBMC.RunPlugin(%s)' % s2))
-                else:
-                    cm.insert(1, ('Enqueue Series', 'XBMC.RunPlugin(%s)' % s1))
+    li.addContextMenuItems(cm, replaceItems=True)
 
-        cm.append(('Toggle debug', 'XBMC.ToggleDebug'))
-
-        li.addContextMenuItems(cm, replaceItems=True)
-
-        # Add item to list
-        xbmcplugin.addDirectoryItem(handle     = int(sys.argv[1]),
-                                    url        = u,
-                                    listitem   = li,
-                                    isFolder   = isFolder,
-                                    totalItems = total_items)
+    # Add item to list
+    xbmcplugin.addDirectoryItem(handle     = int(sys.argv[1]),
+                                url        = u,
+                                listitem   = li,
+                                isFolder   = isFolder,
+                                totalItems = total_items)
 
 
-    def showMain(self):
-        change_language = self._addon.getSetting("change_language")
+def show_main(args):
+    """Show main menu.
 
-        if crj.CrunchyJSON() is False:
-            self.addItem({'Title': 'Session Failed: Check Login'})
-            self.endofdirectory()
-        else:
-            if change_language != "0":
-                crj.CrunchyJSON().changeLocale()
+    """
+    change_language = args._addon.getSetting("change_language")
 
-            Anime   = self._lang(30100).encode("utf8")
-            Drama   = self._lang(30104).encode("utf8")
-            Queue   = self._lang(30105).encode("utf8")
-            History = self._lang(30111).encode("utf8")
+    if crj.load_shelf(args) is False:
+        add_item(args,
+                 {'title': 'Session failed: Check login'})
+        endofdirectory()
+    else:
+        if change_language != "0":
+            crj.change_locale()
 
-            self.addItem({'Title':      Queue,
-                          'mode':       'queue'})
-            self.addItem({'Title':      History,
-                          'mode':       'History'})
-            self.addItem({'Title':      Anime,
-                          'mode':       'Channels',
-                          'media_type': 'Anime'})
-            self.addItem({'Title':      Drama,
-                          'mode':       'Channels',
-                          'media_type': 'Drama'})
-            self.endofdirectory()
+        anime   = args._lang(30100)
+        drama   = args._lang(30104)
+        queue   = args._lang(30105)
+        history = args._lang(30111)
 
-
-    def channels(self):
-        popular         = self._lang(30103).encode("utf8")
-        Simulcasts      = self._lang(30106).encode("utf8")
-        Recently_Added  = self._lang(30102).encode("utf8")
-        alpha           = self._lang(30112).encode("utf8")
-        Browse_by_Genre = self._lang(30107).encode("utf8")
-        seasons         = self._lang(30110).encode("utf8")
-
-        media_type      = self.main.args.media_type
-
-        self.addItem({'Title':      popular,
-                      'mode':       'list_series',
-                      'media_type': media_type,
-                      'filterx':    'popular',
-                      'offset':     '0'})
-        self.addItem({'Title':      Simulcasts,
-                      'mode':       'list_series',
-                      'media_type': media_type,
-                      'filterx':    'simulcast',
-                      'offset':     '0'})
-        self.addItem({'Title':      Recently_Added,
-                      'mode':       'list_series',
-                      'media_type': media_type,
-                      'filterx':    'updated',
-                      'offset':     '0'})
-        self.addItem({'Title':      alpha,
-                      'mode':       'list_series',
-                      'media_type': media_type,
-                      'filterx':    'alpha',
-                      'offset':     '0'})
-        self.addItem({'Title':      Browse_by_Genre,
-                      'mode':       'list_categories',
-                      'media_type': media_type,
-                      'filterx':    'genre',
-                      'offset':     '0'})
-        self.addItem({'Title':      seasons,
-                      'mode':       'list_categories',
-                      'media_type': media_type,
-                      'filterx':    'season',
-                      'offset':     '0'})
-        self.endofdirectory()
+        add_item(args,
+                 {'title':      queue,
+                  'mode':       'queue'})
+        add_item(args,
+                 {'title':      history,
+                  'mode':       'history'})
+        add_item(args,
+                 {'title':      anime,
+                  'mode':       'channels',
+                  'media_type': 'anime'})
+        add_item(args,
+                 {'title':      drama,
+                  'mode':       'channels',
+                  'media_type': 'drama'})
+        endofdirectory()
 
 
-    def json_list_series(self):
-        """List series.
+def channels(args):
+    """Show Crunchyroll channels.
 
-        """
-        crj.CrunchyJSON().list_series(self.main.args)
+    """
+    popular         = args._lang(30103)
+    simulcasts      = args._lang(30106)
+    recently_added  = args._lang(30102)
+    alpha           = args._lang(30112)
+    browse_by_genre = args._lang(30107)
+    seasons         = args._lang(30110)
 
-
-    def json_list_cat(self):
-        """List categories.
-
-        """
-        crj.CrunchyJSON().list_categories(self.main.args)
-
-
-    def json_list_collection(self):
-        """List collections.
-
-        """
-        crj.CrunchyJSON().list_collections(self.main.args)
-
-
-    def json_list_media(self):
-        """List episodes.
-
-        """
-        crj.CrunchyJSON().list_media(self.main.args)
-
-
-    def json_History(self):
-        """Display Crunchyroll history.
-
-        """
-        crj.CrunchyJSON().History()
-
-
-    def queue(self):
-        """Display Crunchyroll queue.
-
-        """
-        crj.CrunchyJSON().Queue()
-
-
-    def add_to_queue(self):
-        """Add selected video series to queue at Crunchyroll.
-
-        """
-        crj.add_to_queue(self.main.args)
-
-
-    def remove_from_queue(self):
-        """Remove selected video series from queue at Crunchyroll.
-
-        """
-        crj.remove_from_queue(self.main.args)
+    add_item(args,
+             {'title':      popular,
+              'mode':       'list_series',
+              'media_type': args.media_type,
+              'filterx':    'popular',
+              'offset':     '0'})
+    add_item(args,
+             {'title':      simulcasts,
+              'mode':       'list_series',
+              'media_type': args.media_type,
+              'filterx':    'simulcast',
+              'offset':     '0'})
+    add_item(args,
+             {'title':      recently_added,
+              'mode':       'list_series',
+              'media_type': args.media_type,
+              'filterx':    'updated',
+              'offset':     '0'})
+    add_item(args,
+             {'title':      alpha,
+              'mode':       'list_series',
+              'media_type': args.media_type,
+              'filterx':    'alpha',
+              'offset':     '0'})
+    add_item(args,
+             {'title':      browse_by_genre,
+              'mode':       'list_categories',
+              'media_type': args.media_type,
+              'filterx':    'genre',
+              'offset':     '0'})
+    add_item(args,
+             {'title':      seasons,
+              'mode':       'list_categories',
+              'media_type': args.media_type,
+              'filterx':    'season',
+              'offset':     '0'})
+    endofdirectory()
 
 
-    def startVideo(self):
-        """Start video playback.
+def fail(args):
+    """Unrecognized mode found.
 
-        """
-        crj.CrunchyJSON().startPlayback(self.main.args)
+    """
+    badstuff = args._lang(30207)
 
+    add_item(args,
+             {'title': badstuff,
+              'mode':  'fail'})
 
-    def Fail(self):
-        badstuff = self._lang(30207).encode("utf8")
+    log("CR: Main: check_mode fall through", xbmc.LOGWARNING)
 
-        self.addItem({'Title': badstuff,
-                      'mode':  'Fail'})
-
-        log("CR: Main: checkMode fall through", xbmc.LOGWARNING)
-
-        self.endofdirectory()
+    endofdirectory()
 
 
+def parse_args():
+    """Decode arguments.
 
-class Main(object):
+    """
+    if (sys.argv[2]):
+        return Args(**dict([p.split('=')
+                                for p in sys.argv[2][1:].split('&')]))
 
-    def __init__(self, checkMode=True):
-
-        crj.CrunchyJSON()
-
-        self.parseArgs()
-        if checkMode:
-            self.checkMode()
-
-
-    def parseArgs(self):
-        # Call updateArgs() with our formatted argv to create self.args object
-        if (sys.argv[2]):
-            exec("self.args = updateArgs(%s')"
-                 % (sys.argv[2][1:].replace('&', "',").replace('=', "='")))
-        else:
-            # updateArgs will turn the 'None' into None.
-            # Don't simply define it as None because unquote_plus in updateArgs
-            # will throw an exception.
-            # This is a pretty ugly solution.
-            self.args = updateArgs(mode = 'None',
-                                   url  = 'None',
-                                   name = 'None')
+    else:
+        # Args will turn the 'None' into None.
+        # Don't simply define it as None because unquote_plus in updateArgs
+        # will throw an exception.
+        # This is a pretty ugly solution.
+        return Args(mode = 'None',
+                    url  = 'None',
+                    name = 'None')
 
 
-    def checkMode(self):
-        mode = self.args.mode
-        log("CR: Main: argv[0] = %s" % sys.argv[0])
-        log("CR: Main: argv[1] = %s" % sys.argv[1])
-        log("CR: Main: argv[2] = %s" % sys.argv[2])
-        log("CR: Main: args = %s" % str(self.args.__dict__))
-        log("CR: Main: mode = %s" % mode)
-        if mode is None:
-            UI().showMain()
-        elif mode == 'Channels':
-            UI().channels()
-        elif mode == 'list_series':
-            UI().json_list_series()
-        elif mode == 'list_categories':
-            UI().json_list_cat()
-        elif mode == 'list_coll':
-            UI().json_list_collection()
-        elif mode == 'list_media':
-            UI().json_list_media()
-        elif mode == 'History':
-            UI().json_History()
-        elif mode == 'queue':
-            UI().queue()
-        elif mode == 'add_to_queue':
-            UI().add_to_queue()
-        elif mode == 'remove_from_queue':
-            UI().remove_from_queue()
-        elif mode == 'videoplay':
-            UI().startVideo()
-        else:
-            UI().Fail()
+def check_mode(args):
+    """Run mode-specific functions.
+
+    """
+    mode = args.mode
+    log("CR: Main: argv[0] = %s" % sys.argv[0],     xbmc.LOGDEBUG)
+    log("CR: Main: argv[1] = %s" % sys.argv[1],     xbmc.LOGDEBUG)
+    log("CR: Main: argv[2] = %s" % sys.argv[2],     xbmc.LOGDEBUG)
+    log("CR: Main: args = %s" % str(args.__dict__), xbmc.LOGDEBUG)
+    log("CR: Main: mode = %s" % mode,               xbmc.LOGDEBUG)
+
+    if mode is None:
+        show_main(args)
+    elif mode == 'channels':
+        channels(args)
+    elif mode == 'list_series':
+        crj.list_series(args)
+    elif mode == 'list_categories':
+        crj.list_categories(args)
+    elif mode == 'list_coll':
+        crj.list_collections(args)
+    elif mode == 'list_media':
+        crj.list_media(args)
+    elif mode == 'history':
+        crj.history(args)
+    elif mode == 'queue':
+        crj.queue(args)
+    elif mode == 'add_to_queue':
+        crj.add_to_queue(args)
+    elif mode == 'remove_from_queue':
+        crj.remove_from_queue(args)
+    elif mode == 'videoplay':
+        crj.start_playback(args)
+    else:
+        fail(args)
+
+
+def main():
+    """Main function for the addon.
+
+    """
+    args = parse_args()
+
+    if crj.load_shelf(args) is False:
+        add_item(args,
+                {'title': 'Session failed: Check login'})
+        endofdirectory()
+
+    else:
+        xbmcplugin.setContent(int(sys.argv[1]), 'movies')
+
+        check_mode(args)
+
+        # Close shelf
+        args.user_data.close()

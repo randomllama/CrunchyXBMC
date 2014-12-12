@@ -49,254 +49,329 @@ __XBMCBUILD__ = xbmc.getInfoLabel("System.BuildVersion") + " " + sys.platform
 
 
 
-class _Info(object):
+def load_shelf(args):
+    notice_msg     = args._lang(30200)
+    setup_msg      = args._lang(30203)
+    acc_type_error = args._lang(30312)
 
-    def __init__(self, *args, **kwargs):
-        self.__dict__.update(kwargs)
+    change_language = args._addon.getSetting("change_language")
 
+    base_path = xbmc.translatePath(args._addon.getAddonInfo('profile')).decode('utf-8')
 
+    base_cache_path = os.path.join(base_path, "cache")
+    if not os.path.exists(base_cache_path):
+        os.makedirs(base_cache_path)
 
-class CrunchyJSON(object):
+    shelf_path = os.path.join(base_path, "cruchyXBMC")
 
-    def __init__(self):
-        self._addon = sys.modules['__main__'].__settings__
-        self._lang  = sys.modules['__main__'].__language__
+    current_datetime = datetime.datetime.now(dateutil.tz.tzutc())
 
-        self.loadShelf()
+    try:
+        # Load persistent vars
+        userData = shelve.open(shelf_path, writeback=True)
 
+        if change_language == "0":
+            userData.setdefault('API_LOCALE',"enUS")
+        elif change_language == "1":
+            userData['API_LOCALE']  = "enUS"
+        elif change_language == "2":
+            userData['API_LOCALE']  = "enGB"
+        elif change_language == "3":
+            userData['API_LOCALE']  = "jaJP"
+        elif change_language == "4":
+            userData['API_LOCALE']  = "frFR"
+        elif change_language == "5":
+            userData['API_LOCALE']  = "deDE"
+        elif change_language == "6":
+            userData['API_LOCALE']  = "ptBR"
+        elif change_language == "7":
+            userData['API_LOCALE']  = "ptPT"
+        elif change_language == "8":
+            userData['API_LOCALE']  = "esLA"
+        elif change_language == "9":
+            userData['API_LOCALE']  = "esES"
 
-    def loadShelf(self):
-        notice_msg     = self._lang(30200).encode("utf8")
-        setup_msg      = self._lang(30203).encode("utf8")
-        acc_type_error = self._lang(30312).encode("utf8")
+        userData['username'] = args._addon.getSetting("crunchy_username")
+        userData['password'] = args._addon.getSetting("crunchy_password")
 
-        change_language = self._addon.getSetting("change_language")
+        if 'device_id' not in userData:
+            char_set  = string.ascii_letters + string.digits
+            device_id = ''.join(random.sample(char_set, 32))
+            userData["device_id"] = device_id
+            log("CR: New device_id created. New device ID: "
+                + str(device_id))
 
-        self.base_path = xbmc.translatePath(self._addon.getAddonInfo('profile')).decode('utf-8')
+        userData['API_HEADERS'] = [('User-Agent',      "Mozilla/5.0 (PLAYSTATION 3; 4.46)"),
+                                   ('Host',            "api.crunchyroll.com"),
+                                   ('Accept-Encoding', "gzip, deflate"),
+                                   ('Accept',          "*/*"),
+                                   ('Content-Type',    "application/x-www-form-urlencoded")]
 
-        self.base_cache_path = os.path.join(self.base_path, "cache")
-        if not os.path.exists(self.base_cache_path):
-            os.makedirs(self.base_cache_path)
+        userData['API_URL']          = "https://api.crunchyroll.com"
+        userData['API_VERSION']      = "1.0.1"
+        userData['API_ACCESS_TOKEN'] = "S7zg3vKx6tRZ0Sf"
+        userData['API_DEVICE_TYPE']  = "com.crunchyroll.ps3"
 
-        shelf_path = os.path.join(self.base_path, "cruchyXBMC")
+        userData.setdefault('premium_type', 'UNKNOWN')
+        userData.setdefault('lastreported', (current_datetime -
+                                             durel.relativedelta(hours = +24)))
+        args.user_data = userData
 
-        current_datetime = datetime.datetime.now(dateutil.tz.tzutc())
+    except:
+        log("CR: Unexpected error:", sys.exc_info(), xbmc.LOGERROR)
 
-        try:
-            # Load persistent vars
-            userData = shelve.open(shelf_path, writeback=True)
+        userData['session_id']      = ''
+        userData['auth_expires']    = (current_datetime -
+                                       durel.relativedelta(hours = +24))
+        userData['lastreported']    = (current_datetime -
+                                       durel.relativedelta(hours = +24))
+        userData['premium_type']    = 'UNKNOWN'
+        userData['auth_token']      = ''
+        userData['session_expires'] = (current_datetime -
+                                       durel.relativedelta(hours = +24))
 
-            if change_language == "0":
-                userData.setdefault('API_LOCALE',"enUS")
-            elif change_language == "1":
-                userData['API_LOCALE']  = "enUS"
-            elif change_language == "2":
-                userData['API_LOCALE']  = "enGB"
-            elif change_language == "3":
-                userData['API_LOCALE']  = "jaJP"
-            elif change_language == "4":
-                userData['API_LOCALE']  = "frFR"
-            elif change_language == "5":
-                userData['API_LOCALE']  = "deDE"
-            elif change_language == "6":
-                userData['API_LOCALE']  = "ptBR"
-            elif change_language == "7":
-                userData['API_LOCALE']  = "ptPT"
-            elif change_language == "8":
-                userData['API_LOCALE']  = "esLA"
-            elif change_language == "9":
-                userData['API_LOCALE']  = "esES"
+        args.user_data = userData
+        userData.close()
 
-            userData['username'] = self._addon.getSetting("crunchy_username")
-            userData['password'] = self._addon.getSetting("crunchy_password")
+        log("CR: Unable to load shelve")
 
-            if 'device_id' not in userData:
-                char_set  = string.ascii_letters + string.digits
-                device_id = ''.join(random.sample(char_set, 32))
-                userData["device_id"] = device_id
-                log("CR: New device_id created. New device ID: "
-                    + str(device_id))
+        return False
 
-            userData['API_HEADERS'] = [('User-Agent',      "Mozilla/5.0 (PLAYSTATION 3; 4.46)"),
-                                       ('Host',            "api.crunchyroll.com"),
-                                       ('Accept-Encoding', "gzip, deflate"),
-                                       ('Accept',          "*/*"),
-                                       ('Content-Type',    "application/x-www-form-urlencoded")]
+    # Check to see if a session_id doesn't exist or if the current
+    # auth token is invalid and if so start a new session and log it in
+    if (('session_id' not in userData) or
+        ('auth_expires' not in userData) or
+        current_datetime > userData['auth_expires']):
 
-            userData['API_URL']          = "https://api.crunchyroll.com"
-            userData['API_VERSION']      = "1.0.1"
-            userData['API_ACCESS_TOKEN'] = "S7zg3vKx6tRZ0Sf"
-            userData['API_DEVICE_TYPE']  = "com.crunchyroll.ps3"
+        # Start new session
+        log("CR: Starting new session")
 
-            userData.setdefault('premium_type', 'UNKNOWN')
-            userData.setdefault('lastreported', (current_datetime -
-                                                 durel.relativedelta(hours = +24)))
-            self.userData = userData
+        options = {'device_id':    userData['device_id'],
+                   'device_type':  userData['API_DEVICE_TYPE'],
+                   'access_token': userData['API_ACCESS_TOKEN']}
 
-        except:
-            log("CR: Unexpected error:", sys.exc_info(), xbmc.LOGERROR)
+        request = makeAPIRequest(args, 'start_session', options)
 
-            userData['session_id']      = ''
-            userData['auth_expires']    = (current_datetime -
-                                           durel.relativedelta(hours = +24))
-            userData['lastreported']    = (current_datetime -
-                                           durel.relativedelta(hours = +24))
-            userData['premium_type']    = 'UNKNOWN'
-            userData['auth_token']      = ''
-            userData['session_expires'] = (current_datetime -
-                                           durel.relativedelta(hours = +24))
+        if request['error'] is False:
+            userData['session_id']      = request['data']['session_id']
+            userData['session_expires'] = (current_datetime +
+                                           durel.relativedelta(hours = +4))
+            userData['test_session']    = current_datetime
 
-            self.userData = userData
-            userData.close()
-            log("CR: Unable to load shelve")
+            log("CR: New session created!"
+                + " Session ID: " + str(userData['session_id']))
+
+        elif request['error'] is True:
+            log("CR: Error starting new session. Error message: "
+                + str(request['message']), xbmc.LOGERROR)
 
             return False
 
-        # Check to see if a session_id doesn't exist or if the current
-        # auth token is invalid and if so start a new session and log it in
-        if (('session_id' not in userData) or
-            ('auth_expires' not in userData) or
-            current_datetime > userData['auth_expires']):
+        # Login the session we just started
+        if not userData['username'] or not userData['password']:
+            log("CR: No username or password set")
 
-            # Start new session
-            log("CR: Starting new session")
+            args.user_data = userData
+            userData.close()
 
-            options = {'device_id':    userData['device_id'],
-                       'device_type':  userData['API_DEVICE_TYPE'],
-                       'access_token': userData['API_ACCESS_TOKEN']}
+            ex = 'XBMC.Notification("' + notice_msg + ':","' \
+                 + setup_msg + '.", 3000)'
+            xbmc.executebuiltin(ex)
+            log("CR: No Crunchyroll account found!", xbmc.LOGERROR)
 
-            request = self.makeAPIRequest('start_session', options)
+            return False
+
+        else:
+            log("CR: Login in the new session")
+
+            options = {'password':   userData['password'],
+                       'account':    userData['username']}
+
+            request = makeAPIRequest(args, 'login', options)
 
             if request['error'] is False:
-                userData['session_id']      = request['data']['session_id']
-                userData['session_expires'] = (current_datetime +
-                                               durel.relativedelta(hours = +4))
-                userData['test_session']    = current_datetime
+                userData['auth_token']   = request['data']['auth']
+                userData['auth_expires'] = dateutil.parser.parse(request['data']['expires'])
+                userData['premium_type'] = ('free'
+                                                if request['data']['user']['premium'] == ''
+                                                else request['data']['user']['premium'])
 
-                log("CR: New session created!"
-                    + " Session ID: " + str(userData['session_id']))
+                log("CR: Login successful")
 
             elif request['error'] is True:
-                log("CR: Error starting new session. Error message: "
+                log("CR: Error logging in new session. Error message: "
                     + str(request['message']), xbmc.LOGERROR)
 
-                return False
-
-            # Login the session we just started
-            if not userData['username'] or not userData['password']:
-                log("CR: No username or password set")
-
-                self.userData = userData
+                args.user_data = userData
                 userData.close()
 
-                ex = 'XBMC.Notification("' + notice_msg + ':","' \
-                     + setup_msg + '.", 3000)'
-                xbmc.executebuiltin(ex)
-                log("CR: No Crunchyroll account found!", xbmc.LOGERROR)
-
                 return False
 
-            else:
-                log("CR: Login in the new session")
+        # Call for usage reporting
+        if current_datetime > userData['lastreported']:
+            userData['lastreported'] = (current_datetime +
+                                        durel.relativedelta(hours = +24))
+            args.user_data = userData
+            usage_reporting(args)
 
-                options = {'password':   userData['password'],
-                           'account':    userData['username']}
+        # Verify user is premium
+        if userData['premium_type'] in 'anime|drama|manga':
+            log("CR: User is a premium " + str(userData['premium_type'])
+                + " member")
 
-                request = self.makeAPIRequest('login', options)
+            args.user_data = userData
 
-                if request['error'] is False:
-                    userData['auth_token']   = request['data']['auth']
-                    userData['auth_expires'] = dateutil.parser.parse(request['data']['expires'])
-                    userData['premium_type'] = ('free'
-                                                    if request['data']['user']['premium'] == ''
-                                                    else request['data']['user']['premium'])
+            return True
 
-                    log("CR: Login successful")
+        else:
+            log("CR: User is not a premium member")
+            xbmc.executebuiltin('Notification(' + notice_msg + ',' +
+                                acc_type_error + ',5000)')
 
-                elif request['error'] is True:
-                    log("CR: Error logging in new session. Error message: "
-                        + str(request['message']), xbmc.LOGERROR)
+            args.user_data = userData = None
+            userData.close()
 
-                    self.userData = userData
-                    userData.close()
-                    return False
+            crm.add_item(args,
+                         {'title': acc_type_error,
+                          'mode':  'fail'})
+            crm.endofdirectory('none')
+
+            return False
+
+    # Check to see if a valid session and auth token exist and if so
+    # reinitialize a new session using the auth token
+    elif ('session_id' in userData and
+          'auth_expires' in userData and
+          current_datetime < userData['auth_expires'] and
+          current_datetime > userData['session_expires']):
+
+        # Re-start new session
+        log("CR: Valid auth token was detected. Restarting session.")
+
+        options = {'device_id':    userData["device_id"],
+                   'device_type':  userData['API_DEVICE_TYPE'],
+                   'access_token': userData['API_ACCESS_TOKEN'],
+                   'auth':         userData['auth_token']}
+
+        request = makeAPIRequest(args, 'start_session', options)
+
+        if request['error'] is False:
+            userData['session_id']      = request['data']['session_id']
+            userData['auth_expires']    = dateutil.parser.parse(request['data']['expires'])
+            userData['premium_type']    = ('free'
+                                               if request['data']['user']['premium'] == ''
+                                               else request['data']['user']['premium'])
+            userData['auth_token']      = request['data']['auth']
+            # 4 hours is a guess. Might be +/- 4.
+            userData['session_expires'] = (current_datetime +
+                                           durel.relativedelta(hours = +4))
+            userData['test_session']    = current_datetime
+
+            log("CR: Session restart successful. Session ID: "
+                + str(userData['session_id']))
 
             # Call for usage reporting
             if current_datetime > userData['lastreported']:
                 userData['lastreported'] = (current_datetime +
                                             durel.relativedelta(hours = +24))
-                self.userData = userData
-                self.usage_reporting()
+                args.user_data = userData
+                usage_reporting(args)
 
             # Verify user is premium
             if userData['premium_type'] in 'anime|drama|manga':
-                log("CR: User is a premium " + str(userData['premium_type'])
-                    + " member")
+                log("CR: User is a premium "
+                    + str(userData['premium_type']) + " member")
 
-                self.userData = userData
-                userData.close()
+                args.user_data = userData
+
                 return True
 
             else:
                 log("CR: User is not a premium member")
-                xbmc.executebuiltin('Notification(' + notice_msg + ',' +
-                                    acc_type_error + ',5000)')
+                xbmc.executebuiltin('Notification(' + notice_msg + ','
+                                    + acc_type_error + ',5000)')
 
-                self.userData = userData = None
+                args.user_data = userData = None
                 userData.close()
 
-                crm.UI().addItem({'Title': acc_type_error,
-                                  'mode':  'Fail'})
-                crm.UI().endofdirectory('none')
+                crm.add_item(args,
+                             {'title': acc_type_error,
+                              'mode':  'fail'})
+                crm.endofdirectory('none')
 
                 return False
 
-        # Check to see if a valid session and auth token exist and if so
-        # reinitialize a new session using the auth token
-        elif ('session_id' in userData and
-              'auth_expires' in userData and
-              current_datetime < userData['auth_expires'] and
-              current_datetime > userData['session_expires']):
+        elif request['error'] is True:
+            # Remove userData so a new session is started next time
+            del userData['session_id']
+            del userData['auth_expires']
+            del userData['premium_type']
+            del userData['auth_token']
+            del userData['session_expires']
 
-            # Re-start new session
-            log("CR: Valid auth token was detected. Restarting session.")
+            log("CR: Error restarting session. Error message: "
+                + str(request['message']), xbmc.LOGERROR)
 
-            options = {'device_id':    userData["device_id"],
-                       'device_type':  userData['API_DEVICE_TYPE'],
-                       'access_token': userData['API_ACCESS_TOKEN'],
-                       'auth':         userData['auth_token']}
+            args.user_data = userData
+            userData.Save()
 
-            request = self.makeAPIRequest('start_session', options)
+            return False
+
+    # If we got to this point that means a session exists and it's still
+    # valid, we don't need to do anything
+    elif ('session_id' in userData and
+          current_datetime < userData['session_expires']):
+
+        # This section below is stupid slow
+        #return True
+        if (userData['test_session'] is None or
+            current_datetime > userData['test_session']):
+
+            # Test once every 10 min
+            userData['test_session'] = (current_datetime +
+                                        durel.relativedelta(minutes = +10))
+
+            # Test to make sure the session still works
+            # (sometimes sessions just stop working)
+            fields  = "".join(["media.episode_number,",
+                               "media.name,",
+                               "media.description,",
+                               "media.media_type,",
+                               "media.series_name,",
+                               "media.available,",
+                               "media.available_time,",
+                               "media.free_available,",
+                               "media.free_available_time,",
+                               "media.duration,",
+                               "media.url,",
+                               "media.screenshot_image,",
+                               "image.fwide_url,",
+                               "image.fwidestar_url,",
+                               "series.landscape_image,",
+                               "image.full_url"])
+            options = {'media_types': "anime|drama",
+                       'fields':      fields}
+
+            request = makeAPIRequest(args, 'queue', options)
 
             if request['error'] is False:
-                userData['session_id']      = request['data']['session_id']
-                userData['auth_expires']    = dateutil.parser.parse(request['data']['expires'])
-                userData['premium_type']    = ('free'
-                                                   if request['data']['user']['premium'] == ''
-                                                   else request['data']['user']['premium'])
-                userData['auth_token']      = request['data']['auth']
-                # 4 hours is a guess. Might be +/- 4.
-                userData['session_expires'] = (current_datetime +
-                                               durel.relativedelta(hours = +4))
-                userData['test_session']    = current_datetime
-
-                log("CR: Session restart successful. Session ID: "
+                log("CR: A valid session was detected."
+                    + " Using existing session ID: "
                     + str(userData['session_id']))
 
                 # Call for usage reporting
                 if current_datetime > userData['lastreported']:
                     userData['lastreported'] = (current_datetime +
                                                 durel.relativedelta(hours = +24))
-                    self.userData = userData
-                    self.usage_reporting()
+                    args.user_data = userData
+                    usage_reporting(args)
 
                 # Verify user is premium
                 if userData['premium_type'] in 'anime|drama|manga':
                     log("CR: User is a premium "
                         + str(userData['premium_type']) + " member")
 
-                    self.userData = userData
-                    userData.close()
+                    args.user_data = userData
 
                     return True
 
@@ -305,134 +380,441 @@ class CrunchyJSON(object):
                     xbmc.executebuiltin('Notification(' + notice_msg + ','
                                         + acc_type_error + ',5000)')
 
-                    self.userData = userData = None
+                    args.user_data = userData = None
                     userData.close()
 
-                    crm.UI().addItem({'Title': acc_type_error,
-                                      'mode':  'Fail'})
-                    crm.UI().endofdirectory('none')
+                    crm.add_item(args,
+                                 {'title': acc_type_error,
+                                  'mode':  'fail'})
+                    crm.endofdirectory('none')
 
                     return False
 
             elif request['error'] is True:
-                # Remove userData so a new session is started next time
+                log("CR: Something in the login process went wrong!")
+
                 del userData['session_id']
                 del userData['auth_expires']
                 del userData['premium_type']
                 del userData['auth_token']
                 del userData['session_expires']
 
-                log("CR: Error restarting session. Error message: "
-                    + str(request['message']), xbmc.LOGERROR)
+                args.user_data = userData
+                userData.close()
 
-                self.userData = userData
-                userData.Save()
                 return False
 
-        # If we got to this point that means a session exists and it's still
-        # valid, we don't need to do anything
-        elif ('session_id' in userData and
-              current_datetime < userData['session_expires']):
+    # This is here as a catch all in case something gets messed up along
+    # the way. Remove userData variables so we start a new session
+    # next time around.
+    else:
+        del userData['session_id']
+        del userData['auth_expires']
+        del userData['premium_type']
+        del userData['auth_token']
+        del userData['session_expires']
 
-            # This section below is stupid slow
-            #return True
-            if (userData['test_session'] is None or
-                current_datetime > userData['test_session']):
+        log("CR: Something in the login process went wrong!")
 
-                # Test once every 10 min
-                userData['test_session'] = (current_datetime +
-                                            durel.relativedelta(minutes = +10))
+        args.user_data = userData
+        userData.close()
 
-                # Test to make sure the session still works
-                # (sometimes sessions just stop working)
-                fields  = "".join(["media.episode_number,",
-                                   "media.name,",
-                                   "media.description,",
-                                   "media.media_type,",
-                                   "media.series_name,",
-                                   "media.available,",
-                                   "media.available_time,",
-                                   "media.free_available,",
-                                   "media.free_available_time,",
-                                   "media.duration,",
-                                   "media.url,",
-                                   "media.screenshot_image,",
-                                   "image.fwide_url,",
-                                   "image.fwidestar_url,",
-                                   "series.landscape_image,",
-                                   "image.full_url"])
-                options = {'media_types': "anime|drama",
-                           'fields':      fields}
-                request = self.makeAPIRequest('queue', options)
+        return False
 
-                if request['error'] is False:
-                    log("CR: A valid session was detected."
-                        + " Using existing session ID: "
-                        + str(userData['session_id']))
 
-                    # Call for usage reporting
-                    if current_datetime > userData['lastreported']:
-                        userData['lastreported'] = (current_datetime +
-                                                    durel.relativedelta(hours = +24))
-                        self.userData = userData
-                        self.usage_reporting()
+def list_series(args):
+    fields  = "".join(["series.name,",
+                       "series.description,",
+                       "series.series_id,",
+                       "series.rating,",
+                       "series.media_count,",
+                       "series.url,",
+                       "series.publisher_name,",
+                       "series.year,",
+                       "series.portrait_image,",
+                       "image.large_url,",
+                       "series.landscape_image,",
+                       "image.full_url"])
+    options = {'media_type': args.media_type,
+               'filter':     args.filterx,
+               'fields':     fields,
+               'limit':      '64',
+               'offset':     int(args.offset)}
 
-                    # Verify user is premium
-                    if userData['premium_type'] in 'anime|drama|manga':
-                        log("CR: User is a premium "
-                            + str(userData['premium_type']) + " member")
+    request = makeAPIRequest(args, 'list_series', options)
 
-                        self.userData = userData
-                        userData.close()
-                        return True
+    queue   = get_queued(args)
 
-                    else:
-                        log("CR: User is not a premium member")
-                        xbmc.executebuiltin('Notification(' + notice_msg + ','
-                                            + acc_type_error + ',5000)')
+    if request['error'] is False:
+        counter = 0
+        for series in request['data']:
+            counter = counter + 1
 
-                        self.userData = userData = None
-                        userData.close()
+            # Only available on some series
+            year   = ('None'
+                          if series['year'] is None
+                          else series['year'])
+            desc   = (''
+                          if series['description'] is None
+                          else series['description'].encode('utf-8'))
+            thumb  = (''
+                          if (series['portrait_image'] is None or
+                              series['portrait_image']['large_url'] is None or
+                              'portrait_image' not in series or
+                              'large_url' not in series['portrait_image'])
+                          else series['portrait_image']['full_url'])
+            art    = (''
+                          if (series['landscape_image'] is None or
+                              series['landscape_image']['full_url'] is None or
+                              'landscape_image' not in series or
+                              'full_url' not in series['landscape_image'])
+                          else series['landscape_image']['full_url'])
+            rating = ('0'
+                          if (series['rating'] == '' or
+                              'rating' not in series)
+                          else series['rating'])
 
-                        crm.UI().addItem({'Title': acc_type_error,
-                                          'mode':  'Fail'})
-                        crm.UI().endofdirectory('none')
+            # Crunchyroll seems to like passing series
+            # without these things
+            if ('media_count' in series and
+                'series_id' in series and
+                'name' in series and
+                series['media_count'] > 0):
 
-                        return False
+                queued = (series['series_id'] in queue)
 
-                elif request['error'] is True:
-                    log("CR: Something in the login process went wrong!")
+                crm.add_item(args,
+                             {'title':        series['name'].encode("utf8"),
+                              'mode':         'list_coll',
+                              'series_id':    series['series_id'],
+                              'count':        str(series['media_count']),
+                              'thumb':        thumb,
+                              'fanart_image': art,
+                              'plot':         desc,
+                              'year':         year},
+                             isFolder=True,
+                             queued=queued)
 
-                    del userData['session_id']
-                    del userData['auth_expires']
-                    del userData['premium_type']
-                    del userData['auth_token']
-                    del userData['session_expires']
+        if counter >= 64:
+            offset = str(int(args.offset) + counter)
+            crm.add_item(args,
+                         {'title':      '...load more',
+                          'mode':       'list_series',
+                          'media_type': args.media_type,
+                          'filterx':    args.filterx,
+                          'offset':     offset})
 
-                    self.userData = userData
-                    userData.close()
-                    return False
+    crm.endofdirectory('none')
 
-        # This is here as a catch all in case something gets messed up along
-        # the way. Remove userData variables so we start a new session
-        # next time around.
+
+def list_categories(args):
+    options = {'media_type': args.media_type}
+
+    request = makeAPIRequest(args, 'categories', options)
+
+    if request['error'] is False:
+        for i in request['data'][args.filterx]:
+            crm.add_item(args,
+                         {'title':      i['label'].encode("utf8"),
+                          'mode':       'list_series',
+                          'media_type': args.media_type,
+                          'filterx':    'tag:' + i['tag']},
+                         isFolder=True)
+
+    crm.endofdirectory('none')
+
+
+def list_collections(args):
+    fields  = "".join(["collection.collection_id,",
+                       "collection.season,",
+                       "collection.name,",
+                       "collection.description,",
+                       "collection.complete,",
+                       "collection.media_count"])
+    options = {'series_id': args.series_id,
+               'fields':    fields,
+               'sort':      'desc',
+               'limit':     args.count}
+
+    request = makeAPIRequest(args, 'list_collections', options)
+
+    if request['error'] is False:
+        if len(request['data']) <= 1:
+            for collection in request['data']:
+                args.complete = '1' if collection['complete'] else '0'
+                args.id       = collection['collection_id']
+
+                return list_media(args)
         else:
-            del userData['session_id']
-            del userData['auth_expires']
-            del userData['premium_type']
-            del userData['auth_token']
-            del userData['session_expires']
+            queued = (args.series_id in get_queued(args))
 
-            log("CR: Something in the login process went wrong!")
+            for collection in request['data']:
+                complete = '1' if collection['complete'] else '0'
+                crm.add_item(args,
+                             {'title':        collection['name'].encode("utf8"),
+                              'filterx':      args.name,
+                              'mode':         'list_media',
+                              'count':        str(args.count),
+                              'id':           collection['collection_id'],
+                              'plot':         collection['description'].encode("utf8"),
+                              'complete':     complete,
+                              'season':       str(collection['season']),
+                              'series_id':    args.series_id,
+                              'thumb':        args.icon,
+                              'fanart_image': args.fanart},
+                             isFolder=True,
+                             queued=queued)
 
-            self.userData = userData
-            userData.close()
-            return False
+    crm.endofdirectory('none')
 
 
-    def list_series(self, args):
-        UI = crm.UI()
+def list_media(args):
+    sort    = 'asc' if args.complete is '1' else 'desc'
+    fields  = "".join(["media.episode_number,",
+                       "media.name,",
+                       "media.description,",
+                       "media.media_type,",
+                       "media.series_name,",
+                       "media.available,",
+                       "media.available_time,",
+                       "media.free_available,",
+                       "media.free_available_time,",
+                       "media.playhead,",
+                       "media.duration,",
+                       "media.url,",
+                       "media.screenshot_image,",
+                       "image.fwide_url,",
+                       "image.fwidestar_url,",
+                       "series.landscape_image,",
+                       "image.full_url"])
+    options = {'collection_id': args.id,
+               'fields':        fields,
+               'sort':          sort,
+               'limit':         '256'}
 
+    request = makeAPIRequest(args, 'list_media', options)
+
+    if request['error'] is False:
+        return list_media_items(args,
+                                request['data'],
+                                args.name,
+                                args.season,
+                                'normal',
+                                args.fanart)
+
+
+def list_media_items(args, request, series_name, season, mode, fanart):
+    """List video episodes.
+
+    """
+    queue = get_queued(args)
+
+    for media in request:
+        queued = ((media['series']['series_id']
+                       if mode == "history"
+                       else args.series_id) in queue)
+
+        # The following are items to help display Recently Watched
+        # and Queue items correctly
+        season      = (media['collection']['season']
+                           if mode == "history"
+                           else season)
+        series_name = (media['series']['name']
+                           if mode == "history"
+                           else series_name)
+        series_name = (media['most_likely_media']['series_name']
+                           if mode == "queue"
+                           else series_name)
+        # On history/queue, the fanart is obtained directly from the json
+        fanart      = (media['series']['landscape_image']['fwide_url']
+                           if (mode == "history" or mode == "queue")
+                           else fanart)
+        # History media is one level deeper in the json string
+        # than normal media items
+        media       = (media['media']
+                           if mode == "history"
+                           else media)
+
+        # Some queue items don't have most_likely_media, skip them
+        if mode == "queue" and 'most_likely_media' not in media:
+            continue
+
+        # Queue media is one level deeper in the json string
+        # than normal media items
+        media = media['most_likely_media'] if mode == "queue" else media
+
+        current_datetime   = datetime.datetime.now(dateutil.tz.tzutc())
+        available_datetime = dateutil.parser.parse(media['available_time'])
+        available_datetime = available_datetime.astimezone(dateutil.tz.tzlocal())
+        available_date     = available_datetime.date()
+        available_delta    = available_datetime - current_datetime
+        available_in       = (str(available_delta.days) + " days."
+                                  if available_delta.days > 0
+                                  else str(available_delta.seconds/60/60)
+                                      + " hours.")
+
+        # Fix Crunchyroll inconsistencies & add details for upcoming or
+        # unreleased episodes.
+        # PV episodes have no episode number so we set it to 0.
+        media['episode_number'] = ('0'
+                                       if media['episode_number'] == ''
+                                       else media['episode_number'])
+        # CR puts letters into some rare episode numbers
+        media['episode_number'] = re.sub('\D', '', media['episode_number'])
+
+        if media['episode_number'] == '0':
+            name = ("NO NAME"
+                        if media['name'] == ''
+                        else media['name'])
+        else:
+            # CR doesn't seem to include episode names for all media,
+            # make one up
+            name = ("Episode " + str(media['episode_number'])
+                        if media['name'] == ''
+                        else "Episode " + media['episode_number'] + " - "
+                            + media['name'])
+
+        name = (series_name + " " + name
+                    if (mode == "history" or
+                        mode == "queue")
+                    else name)
+        name = ("* " + name
+                    if media['free_available'] is False
+                    else name)
+        soon = ("Coming Soon - " + series_name
+                + " Episode " + str(media['episode_number'])
+                    if mode == "queue"
+                    else "Coming Soon - Episode "
+                        + str(media['episode_number']))
+        # Set the name for upcoming episode
+        name = soon if media['available'] is False else name
+
+        # There is a bug which prevents Season 0 from displaying correctly
+        # in PMC. This is to help fix that. Will break if a series has
+        # both season 0 and 1.
+        #season = '1' if season == '0' else season
+
+        # Not all shows have thumbnails
+        thumb = ("http://static.ak.crunchyroll.com/i/no_image_beta_full.jpg"
+                     if media['screenshot_image'] is None
+                     else media['screenshot_image']['fwide_url']
+                         if media['free_available'] is True
+                         else media['screenshot_image']['fwidestar_url'])
+        # Sets the thumbnail to coming soon if the episode
+        # isn't available yet
+        thumb = ("http://static.ak.crunchyroll.com/i/coming_soon_beta_fwide.jpg"
+                     if media['available'] is False
+                     else thumb)
+
+        description = (''
+                           if media['description'] is None
+                           else media['description'].encode('utf-8'))
+        # Set the description for upcoming episodes
+        description = ("This episode will be available in " + str(available_in)
+                           if media['available'] is False
+                           else description)
+
+        duration = ("0"
+                        if media['available'] is False
+                        else str(media['duration']))
+        # Current playback point
+        playhead = ("0"
+                        if media['available'] is False
+                        else str(media['playhead']))
+
+        # Adding published date instead
+        year = ('None'
+                    if media['available_time'] is None
+                    else media['available_time'][:10])
+
+        url = media['url']
+        media_id = url.split('-')[-1]
+
+        crm.add_item(args,
+                     {'title':        name.encode("utf8"),
+                      'mode':         'videoplay',
+                      'id':           media_id.encode("utf8"),
+                      'thumb':        thumb.encode("utf8"),
+                      'url':          url.encode("utf8"),
+                      'fanart_image': fanart,
+                      'plot':         description,
+                      'year':         year,
+                      'playhead':     playhead,
+                      'duration':     duration},
+                     isFolder=False,
+                     queued=queued)
+
+    crm.endofdirectory('none')
+
+
+def history(args):
+    fields  = "".join(["media.episode_number,",
+                       "media.name,",
+                       "media.description,",
+                       "media.media_type,",
+                       "media.series_name,",
+                       "media.available,",
+                       "media.available_time,",
+                       "media.free_available,",
+                       "media.free_available_time,",
+                       "media.duration,",
+                       "media.playhead,",
+                       "media.url,",
+                       "media.screenshot_image,",
+                       "image.fwide_url,",
+                       "image.fwidestar_url"])
+    options = {'media_types': "anime|drama",
+               'fields':      fields,
+               'limit':       '256'}
+
+    request = makeAPIRequest(args, 'recently_watched', options)
+
+    if request['error'] is False:
+        return list_media_items(args,
+                                request['data'],
+                                'Recently Watched',
+                                '1',
+                                'history',
+                                'fanart')
+
+
+def queue(args):
+    queue_type = args._addon.getSetting("queue_type")
+
+    log("CR: Queue: queue type is " + str(queue_type))
+    if queue_type == '0':
+        fields  = "".join(["media.episode_number,",
+                           "media.name,",
+                           "media.description,",
+                           "media.media_type,",
+                           "media.series_name,",
+                           "media.available,",
+                           "media.available_time,",
+                           "media.free_available,",
+                           "media.free_available_time,",
+                           "media.duration,",
+                           "media.playhead,",
+                           "media.url,",
+                           "media.screenshot_image,",
+                           "image.fwide_url,",
+                           "image.fwidestar_url,",
+                           "series.landscape_image,",
+                           "image.full_url"])
+        options = {'media_types': "anime|drama",
+                   'fields':      fields}
+
+        request = makeAPIRequest(args, 'queue', options)
+
+        log("CR: Queue: request['error'] = " + str(request['error']))
+        if request['error'] is False:
+            return list_media_items(args,
+                                    request['data'],
+                                    'Queue',
+                                    '1',
+                                    'queue',
+                                    'fanart')
+
+    elif queue_type == '1':
         fields  = "".join(["series.name,",
                            "series.description,",
                            "series.series_id,",
@@ -445,44 +827,40 @@ class CrunchyJSON(object):
                            "image.large_url,",
                            "series.landscape_image,",
                            "image.full_url"])
-        options = {'media_type': args.media_type.lower(),
-                   'filter':     args.filterx,
-                   'fields':     fields,
-                   'limit':      '64',
-                   'offset':     int(args.offset)}
+        options = {'media_types': "anime|drama",
+                   'fields':      fields}
 
-        request = self.makeAPIRequest('list_series', options)
+        request = makeAPIRequest(args, 'queue', options)
 
-        queue   = self.get_queued(args)
-
+        log("CR: Queue: request['error'] = " + str(request['error']))
         if request['error'] is False:
-            counter = 0
+            log("CR: Queue: has %d series" % len(request['data']))
             for series in request['data']:
-                counter = counter + 1
+                series = series['series']
+                # Only available for some series
+                year   = ('None'
+                              if series['year'] is None
+                              else series['year'])
+                desc   = (''
+                              if series['description'] is None
+                              else series['description'].encode('utf-8'))
 
-                # Only available on some series
-                year        = ('None'
-                                   if series['year'] is None
-                                   else series['year'])
-                description = (''
-                                   if series['description'] is None
-                                   else series['description'].encode('utf-8'))
-                thumb       = (''
-                                   if (series['portrait_image'] is None or
-                                      series['portrait_image']['large_url'] is None or
-                                      'portrait_image' not in series or
-                                      'large_url' not in series['portrait_image'])
-                                   else series['portrait_image']['full_url'])
-                art         = (''
-                                   if (series['landscape_image'] is None or
-                                      series['landscape_image']['full_url'] is None or
-                                      'landscape_image' not in series or
-                                      'full_url' not in series['landscape_image'])
-                                   else series['landscape_image']['full_url'])
-                rating      = ('0'
-                                   if (series['rating'] == '' or
-                                       'rating' not in series)
-                                   else series['rating'])
+                thumb  = (''
+                              if (series['portrait_image'] is None or
+                                  series['portrait_image']['large_url'] is None or
+                                  'portrait_image' not in series or
+                                  'large_url' not in series['portrait_image'])
+                              else series['portrait_image']['full_url'])
+                art    = (''
+                              if (series['landscape_image'] is None or
+                                  series['landscape_image']['full_url'] is None or
+                                  'landscape_image' not in series or
+                                  'full_url' not in series['landscape_image'])
+                              else series['landscape_image']['full_url'])
+                rating = ('0'
+                              if (series['rating'] == '' or
+                                  'rating' not in series)
+                              else series['rating'])
 
                 # Crunchyroll seems to like passing series
                 # without these things
@@ -491,768 +869,388 @@ class CrunchyJSON(object):
                     'name' in series and
                     series['media_count'] > 0):
 
-                    queued = (series['series_id'] in queue)
-
-                    UI.addItem({'Title':        series['name'].encode("utf8"),
-                                'mode':         'list_coll',
-                                'series_id':    series['series_id'],
-                                'count':        str(series['media_count']),
-                                'Thumb':        thumb,
-                                'Fanart_Image': art,
-                                'plot':         description,
-                                'year':         year},
-                               isFolder=True,
-                               queued=queued)
-
-            if counter >= 64:
-                offset = str(int(args.offset) + counter)
-                UI.addItem({'Title':      '...load more',
-                            'mode':       'list_series',
-                            'media_type': args.media_type,
-                            'filterx':    args.filterx,
-                            'offset':     offset})
-
-        UI.endofdirectory('none')
-
-
-    def list_categories(self, args):
-        UI = crm.UI()
-
-        options = {'media_type': args.media_type.lower()}
-
-        request = self.makeAPIRequest('categories', options)
-
-        if request['error'] is False:
-            for i in request['data'][args.filterx]:
-                UI.addItem({'Title':      i['label'].encode("utf8"),
-                            'mode':       'list_series',
-                            'media_type': args.media_type,
-                            'filterx':    'tag:' + i['tag']},
-                           isFolder=True)
-
-        UI.endofdirectory('none')
-
-
-    def list_collections(self, args):
-        UI = crm.UI()
-
-        fields  = "".join(["collection.collection_id,",
-                           "collection.season,",
-                           "collection.name,",
-                           "collection.description,",
-                           "collection.complete,",
-                           "collection.media_count"])
-        options = {'series_id': args.series_id,
-                   'fields':    fields,
-                   'sort':      'desc',
-                   'limit':     args.count}
-
-        request = self.makeAPIRequest('list_collections', options)
-
-        if request['error'] is False:
-            if len(request['data']) <= 1:
-                for collection in request['data']:
-                    args.complete = '1' if collection['complete'] else '0'
-                    args.id       = collection['collection_id']
-
-                    return self.list_media(args)
-            else:
-                queued = (args.series_id in self.get_queued(args))
-
-                for collection in request['data']:
-                    complete = '1' if collection['complete'] else '0'
-                    UI.addItem({'Title':        collection['name'].encode("utf8"),
-                                'filterx':      args.name,
-                                'mode':         'list_media',
-                                'count':        str(args.count),
-                                'id':           collection['collection_id'],
-                                'plot':         collection['description'].encode("utf8"),
-                                'complete':     complete,
-                                'season':       str(collection['season']),
-                                'series_id':    args.series_id,
-                                'Thumb':        args.icon,
-                                'Fanart_Image': args.fanart},
-                               isFolder=True,
-                               queued=queued)
-
-        UI.endofdirectory('none')
-
-
-    def list_media(self, args):
-        sort    = 'asc' if args.complete is '1' else 'desc'
-        fields  = "".join(["media.episode_number,",
-                           "media.name,",
-                           "media.description,",
-                           "media.media_type,",
-                           "media.series_name,",
-                           "media.available,",
-                           "media.available_time,",
-                           "media.free_available,",
-                           "media.free_available_time,",
-                           "media.playhead,",
-                           "media.duration,",
-                           "media.url,",
-                           "media.screenshot_image,",
-                           "image.fwide_url,",
-                           "image.fwidestar_url,",
-                           "series.landscape_image,",
-                           "image.full_url"])
-        options = {'collection_id': args.id,
-                   'fields':        fields,
-                   'sort':          sort,
-                   'limit':         '256'}
-
-        request = self.makeAPIRequest('list_media', options)
-
-        if request['error'] is False:
-            return self.list_media_items(request['data'],
-                                         args.name,
-                                         args.season,
-                                         'normal',
-                                         args.fanart)
-
-
-    def list_media_items(self, request, series_name, season, mode, fanart):
-        """List video episodes.
-
-        """
-        UI    = crm.UI()
-        args  = UI.main.args
-        queue = self.get_queued(args)
-
-        for media in request:
-            queued = ((media['series']['series_id']
-                           if mode == "history"
-                           else args.series_id) in queue)
-
-            # The following are items to help display Recently Watched
-            # and Queue items correctly
-            season      = (media['collection']['season']
-                               if mode == "history"
-                               else season)
-            series_name = (media['series']['name']
-                               if mode == "history"
-                               else series_name)
-            series_name = (media['most_likely_media']['series_name']
-                               if mode == "queue"
-                               else series_name)
-            # On history/queue, the fanart is obtained directly from the json
-            fanart      = (media['series']['landscape_image']['fwide_url']
-                               if (mode == "history" or mode == "queue")
-                               else fanart)
-            # History media is one level deeper in the json string
-            # than normal media items
-            media       = (media['media']
-                               if mode == "history"
-                               else media)
-
-            # Some queue items don't have most_likely_media, skip them
-            if mode == "queue" and 'most_likely_media' not in media:
-                continue
-
-            # Queue media is one level deeper in the json string
-            # than normal media items
-            media = media['most_likely_media'] if mode == "queue" else media
-
-            current_datetime   = datetime.datetime.now(dateutil.tz.tzutc())
-            available_datetime = dateutil.parser.parse(media['available_time'])
-            available_datetime = available_datetime.astimezone(dateutil.tz.tzlocal())
-            available_date     = available_datetime.date()
-            available_delta    = available_datetime - current_datetime
-            available_in       = (str(available_delta.days) + " days."
-                                      if available_delta.days > 0
-                                      else str(available_delta.seconds/60/60)
-                                          + " hours.")
-
-            # Fix Crunchyroll inconsistencies & add details for upcoming or
-            # unreleased episodes.
-            # PV episodes have no episode number so we set it to 0.
-            media['episode_number'] = ('0'
-                                           if media['episode_number'] == ''
-                                           else media['episode_number'])
-            # CR puts letters into some rare episode numbers
-            media['episode_number'] = re.sub('\D', '', media['episode_number'])
-
-            if media['episode_number'] == '0':
-                name = ("NO NAME"
-                            if media['name'] == ''
-                            else media['name'])
-            else:
-                # CR doesn't seem to include episode names for all media,
-                # make one up
-                name = ("Episode " + str(media['episode_number'])
-                            if media['name'] == ''
-                            else "Episode " + media['episode_number'] + " - "
-                                + media['name'])
-
-            name = (series_name + " " + name
-                        if (mode == "history" or
-                            mode == "queue")
-                        else name)
-            name = ("* " + name
-                        if media['free_available'] is False
-                        else name)
-            soon = ("Coming Soon - " + series_name
-                    + " Episode " + str(media['episode_number'])
-                        if mode == "queue"
-                        else "Coming Soon - Episode "
-                            + str(media['episode_number']))
-            # Set the name for upcoming episode
-            name = soon if media['available'] is False else name
-
-            # There is a bug which prevents Season 0 from displaying correctly
-            # in PMC. This is to help fix that. Will break if a series has
-            # both season 0 and 1.
-            #season = '1' if season == '0' else season
-
-            # Not all shows have thumbnails
-            thumb = ("http://static.ak.crunchyroll.com/i/no_image_beta_full.jpg"
-                         if media['screenshot_image'] is None
-                         else media['screenshot_image']['fwide_url']
-                             if media['free_available'] is True
-                             else media['screenshot_image']['fwidestar_url'])
-            # Sets the thumbnail to coming soon if the episode
-            # isn't available yet
-            thumb = ("http://static.ak.crunchyroll.com/i/coming_soon_beta_fwide.jpg"
-                         if media['available'] is False
-                         else thumb)
-
-            description = (''
-                               if media['description'] is None
-                               else media['description'].encode('utf-8'))
-            # Set the description for upcoming episodes
-            description = ("This episode will be available in "
-                           + str(available_in)
-                               if media['available'] is False
-                               else description)
-
-            duration = ("0"
-                            if media['available'] is False
-                            else str(media['duration']))
-            # Current playback point
-            playhead = ("0"
-                            if media['available'] is False
-                            else str(media['playhead']))
-
-            # Adding published date instead
-            year = ('None'
-                        if media['available_time'] is None
-                        else media['available_time'][:10])
-
-            url = media['url']
-            media_id = url.split('-')[-1]
-
-            UI.addItem({'Title':        name.encode("utf8"),
-                        'mode':         'videoplay',
-                        'id':           media_id.encode("utf8"),
-                        'Thumb':        thumb.encode("utf8"),
-                        'url':          url.encode("utf8"),
-                        'Fanart_Image': fanart,
-                        'plot':         description,
-                        'year':         year,
-                        'playhead':     playhead,
-                        'duration':     duration},
-                       isFolder=False,
-                       queued=queued)
-
-        UI.endofdirectory('none')
-
-
-    def History(self):
-        fields  = "".join(["media.episode_number,",
-                           "media.name,",
-                           "media.description,",
-                           "media.media_type,",
-                           "media.series_name,",
-                           "media.available,",
-                           "media.available_time,",
-                           "media.free_available,",
-                           "media.free_available_time,",
-                           "media.duration,",
-                           "media.playhead,",
-                           "media.url,",
-                           "media.screenshot_image,",
-                           "image.fwide_url,",
-                           "image.fwidestar_url"])
-        options = {'media_types': "anime|drama",
-                   'fields':      fields,
-                   'limit':       '256'}
-
-        request = self.makeAPIRequest('recently_watched', options)
-
-        if request['error'] is False:
-            return self.list_media_items(request['data'],
-                                         'Recently Watched',
-                                         '1',
-                                         'history',
-                                         'fanart')
-
-
-    def Queue(self):
-        UI         = crm.UI()
-        queue_type = self._addon.getSetting("queue_type")
-
-        log("CR: Queue: queue type is " + str(queue_type))
-        if queue_type == '0':
-            fields  = "".join(["media.episode_number,",
-                               "media.name,",
-                               "media.description,",
-                               "media.media_type,",
-                               "media.series_name,",
-                               "media.available,",
-                               "media.available_time,",
-                               "media.free_available,",
-                               "media.free_available_time,",
-                               "media.duration,",
-                               "media.playhead,",
-                               "media.url,",
-                               "media.screenshot_image,",
-                               "image.fwide_url,",
-                               "image.fwidestar_url,",
-                               "series.landscape_image,",
-                               "image.full_url"])
-            options = {'media_types': "anime|drama",
-                       'fields':      fields}
-
-            request = self.makeAPIRequest('queue', options)
-
-            log("CR: Queue: request['error'] = " + str(request['error']))
-            if request['error'] is False:
-                return self.list_media_items(request['data'],
-                                             'Queue',
-                                             '1',
-                                             'queue',
-                                             'fanart')
-
-        elif queue_type == '1':
-            fields  = "".join(["series.name,",
-                               "series.description,",
-                               "series.series_id,",
-                               "series.rating,",
-                               "series.media_count,",
-                               "series.url,",
-                               "series.publisher_name,",
-                               "series.year,",
-                               "series.portrait_image,",
-                               "image.large_url,",
-                               "series.landscape_image,",
-                               "image.full_url"])
-            options = {'media_types': "anime|drama",
-                       'fields':      fields}
-
-            request = self.makeAPIRequest('queue', options)
-
-            log("CR: Queue: request['error'] = " + str(request['error']))
-            if request['error'] is False:
-                log("CR: Queue: has %d series" % len(request['data']))
-                for series in request['data']:
-                    series      = series['series']
-                    # Only available for some series
-                    year        = ('None'
-                                       if series['year'] is None
-                                       else series['year'])
-                    description = (''
-                                       if series['description'] is None
-                                       else series['description'].encode('utf-8'))
-
-                    thumb  = (''
-                                  if (series['portrait_image'] is None or
-                                      series['portrait_image']['large_url'] is None or
-                                      'portrait_image' not in series or
-                                      'large_url' not in series['portrait_image'])
-                                  else series['portrait_image']['full_url'])
-                    art    = ('' if (series['landscape_image'] is None or
-                                     series['landscape_image']['full_url'] is None or
-                                     'landscape_image' not in series or
-                                     'full_url' not in series['landscape_image'])
-                                  else series['landscape_image']['full_url'])
-                    rating = ('0' if (series['rating'] == '' or
-                                      'rating' not in series)
-                                  else series['rating'])
-
-                    # Crunchyroll seems to like passing series
-                    # without these things
-                    if ('media_count' in series and
-                        'series_id' in series and
-                        'name' in series and
-                        series['media_count'] > 0):
-
-                        UI.addItem({'Title':        series['name'].encode("utf8"),
-                                    'mode':         'list_coll',
-                                    'series_id':    series['series_id'],
-                                    'Thumb':        thumb,
-                                    'Fanart_Image': art,
-                                    'plot':         description,
-                                    'year':         year},
-                                   isFolder=True,
-                                   queued=True)
-
-                        log("CR: Queue: series = '%s' queued"
-                            % series['name'.encode('utf8')])
-                    else:
-                        log("CR: Queue: series not queued!")
-
-                UI.endofdirectory('none')
-
-
-    def get_queued(self, args):
-        """Get list of queued series.
-
-        """
-        options = {'fields': "series.series_id"}
-
-        request = self.makeAPIRequest('queue', options)
-
-        return [col['series']['series_id']
-                    for col in request['data']]
-
-
-    def add_to_queue(self, args):
-        """Add selected video series to queue at Crunchyroll.
-
-        """
-        # Get series_id
-        if args.series_id is None:
-            options = {'media_id': args.id,
-                       'fields':   "series.series_id"}
-            request = self.makeAPIRequest('info', options)
-
-            series_id = request['data']['series_id']
-        else:
-            series_id = args.series_id
-
-        # Add the series to queue at CR if it is not there already
-        options = {'series_id': series_id,
-                   'fields':    "series.series_id"}
-        request = self.makeAPIRequest('queue', options)
-
-        for col in request['data']:
-            if series_id == col['series']['series_id']:
-                return
-
-        options = {'series_id': series_id}
-
-        request = self.makeAPIRequest('add_to_queue', options)
-
-        log("CR: add_to_queue: request['error'] = " + str(request['error']))
-
-
-    def remove_from_queue(self, args):
-        """Remove selected video series from queue at Crunchyroll.
-
-        """
-        # Get series_id
-        if args.series_id is None:
-            options = {'media_id': args.id,
-                       'fields':   "series.series_id"}
-            request = self.makeAPIRequest('info', options)
-
-            series_id = request['data']['series_id']
-        else:
-            series_id = args.series_id
-
-        # Remove the series from queue at CR if it is there
-        options = {'series_id': series_id,
-                   'fields':    "series.series_id"}
-        request = self.makeAPIRequest('queue', options)
-
-        for col in request['data']:
-            if series_id == col['series']['series_id']:
-                options = {'series_id': series_id}
-
-                request = self.makeAPIRequest('remove_from_queue', options)
-
-                log("CR: remove_from_queue: request['error'] = "
-                    + str(request['error']))
-
-        # Refresh directory listing
-        xbmc.executebuiltin('XBMC.Container.Refresh')
-
-
-    def startPlayback(self, args):
-        """Play video stream with selected quality.
-
-        """
-        res_quality = ['low', 'mid', 'high', 'ultra']
-        quality     = res_quality[int(self._addon.getSetting("video_quality"))]
-
-        fields = "".join(["media.episode_number,",
-                          "media.name,",
-                          "media.playhead,",
-                          "media.description,",
-                          "media.url,",
-                          "media.stream_data"])
-
-        values = {'media_id': args.id,
-                  'fields':   fields}
-
-        request = self.makeAPIRequest('info', values)
-
-        if request['error']:
-            log("CR: startPlayback: Connection failed, aborting..")
-            sys.exit(1)
-
-        if self._addon.getSetting("playback_resume") == 'true':
-            playback_resume = True
-        else:
-            playback_resume = False
-
-        if playback_resume is not True:
-            resumetime = "0"
-        else:
-            resumetime = str(request['data']['playhead'])
-
-        if int(resumetime) > 0:
-            playcount = 0
-        else:
-            playcount = 1
-
-        allurl = {}
-        playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
-
-        if request['error'] is False:
-            if request['data']['stream_data'] is not None:
-                for stream in request['data']['stream_data']['streams']:
-                    allurl[stream['quality']] = stream['url']
-
-                if allurl[quality] is not None:
-                    url = allurl[quality]
-                elif quality == 'ultra' and allurl['high'] is not None:
-                    url = allurl['high']
-                elif allurl['mid'] is not None:
-                    url = allurl['mid']
+                    crm.add_item(args,
+                                 {'title':        series['name'].encode("utf8"),
+                                  'mode':         'list_coll',
+                                  'series_id':    series['series_id'],
+                                  'thumb':        thumb,
+                                  'fanart_image': art,
+                                  'plot':         desc,
+                                  'year':         year},
+                                 isFolder=True,
+                                 queued=True)
+
+                    log("CR: Queue: series = '%s' queued"
+                        % series['name'.encode('utf8')])
                 else:
-                    url = allurl['low']
+                    log("CR: Queue: series not queued!")
 
-                item = xbmcgui.ListItem(args.name, path=url)
-                item.setInfo(type="Video", infoLabels={"Title":     args.name,
-                                                       "playcount": playcount})
-                item.setThumbnailImage(args.icon)
-                item.setProperty('TotalTime',  args.duration)
-                item.setProperty('ResumeTime', resumetime)
-
-                log("CR: startPlayback: url = %s" % url)
-                player = xbmc.Player()
-
-                xbmcplugin.setResolvedUrl(int(sys.argv[1]),
-                                          succeeded=True,
-                                          listitem=item)
-
-                log("CR: startPlayback: Starting ...")
-
-                timeplayed = resumetime
-
-                # Give the player time to start up
-                time.sleep(3)
-
-                s = "CR: startPlayback: player is playing == %d"
-                log(s % player.isPlaying(), xbmc.LOGDEBUG)
-
-                playlist_position = playlist.getposition()
-
-                if int(resumetime) <= 60:
-                    playback_resume = False
-
-                try:
-                    if playback_resume is True:
-                        player.seekTime(float(resumetime))
-
-                    while playlist_position == playlist.getposition():
-                        timeplayed = str(int(player.getTime()))
-
-                        values = {'event':      'playback_status',
-                                  'media_id':   args.id,
-                                  'playhead':   timeplayed}
-
-                        request = self.makeAPIRequest('log', values)
-
-                        # Use video timeline here
-                        xbmc.sleep(5000)
-
-                except RuntimeError as e:
-                    log("CR: startPlayback: Player stopped playing: %r" % e)
-
-                log("CR: startPlayback: Finished logging: %s" % url)
+            crm.endofdirectory('none')
 
 
-    def pretty(self, d, indent=1):
-        """Pretty printer for dictionaries.
+def get_queued(args):
+    """Get list of queued series.
 
-        """
-        if isinstance(d, list):
-            for i in d:
-                log('--', xbmc.LOGDEBUG)
-                self.pretty(i, indent + 1)
-        else:
-            for key, value in d.iteritems():
-                log(' ' * 2 * indent + str(key), xbmc.LOGDEBUG)
-                if isinstance(value, (dict, list)):
-                    self.pretty(value, indent + 1)
-                else:
-                    if isinstance(value, unicode):
-                        value = value.encode('utf8')
-                    else:
-                        value = str(value)
-                    log(' ' * 2 * (indent + 1) + value, xbmc.LOGDEBUG)
+    """
+    options = {'fields': "series.series_id"}
+
+    request = makeAPIRequest(args, 'queue', options)
+
+    return [col['series']['series_id']
+                for col in request['data']]
 
 
-    def makeAPIRequest(self, method, options):
-        if self.userData['premium_type'] in 'anime|drama|manga|UNKNOWN':
-            log("CR: makeAPIRequest: get JSON")
+def add_to_queue(args):
+    """Add selected video series to queue at Crunchyroll.
 
-            values = {'version':    self.userData['API_VERSION'],
-                      'locale':     self.userData['API_LOCALE']}
+    """
+    # Get series_id
+    if args.series_id is None:
+        options = {'media_id': args.id,
+                   'fields':   "series.series_id"}
 
-            if method != 'start_session':
-                values['session_id'] = self.userData['session_id']
+        request = makeAPIRequest(args, 'info', options)
 
-            values.update(options)
-            options = urllib.urlencode(values)
+        series_id = request['data']['series_id']
+    else:
+        series_id = args.series_id
 
-            opener = urllib2.build_opener()
-            opener.addheaders = self.userData['API_HEADERS']
-            urllib2.install_opener(opener)
+    # Add the series to queue at CR if it is not there already
+    options = {'series_id': series_id,
+               'fields':    "series.series_id"}
 
-            url = self.userData['API_URL'] + "/" + method + ".0.json"
+    request = makeAPIRequest(args, 'queue', options)
 
-            log("CR: makeAPIRequest: url = %s" % url)
-            log("CR: makeAPIRequest: options = %s" % options)
+    for col in request['data']:
+        if series_id == col['series']['series_id']:
+            return
 
+    options = {'series_id': series_id}
+
+    request = makeAPIRequest(args, 'add_to_queue', options)
+
+    log("CR: add_to_queue: request['error'] = " + str(request['error']))
+
+
+def remove_from_queue(args):
+    """Remove selected video series from queue at Crunchyroll.
+
+    """
+    # Get series_id
+    if args.series_id is None:
+        options = {'media_id': args.id,
+                   'fields':   "series.series_id"}
+
+        request = makeAPIRequest(args, 'info', options)
+
+        series_id = request['data']['series_id']
+    else:
+        series_id = args.series_id
+
+    # Remove the series from queue at CR if it is there
+    options = {'series_id': series_id,
+               'fields':    "series.series_id"}
+
+    request = makeAPIRequest(args, 'queue', options)
+
+    for col in request['data']:
+        if series_id == col['series']['series_id']:
+            options = {'series_id': series_id}
+
+            request = makeAPIRequest(args, 'remove_from_queue', options)
+
+            log("CR: remove_from_queue: request['error'] = "
+                + str(request['error']))
+
+    # Refresh directory listing
+    xbmc.executebuiltin('XBMC.Container.Refresh')
+
+
+def start_playback(args):
+    """Play video stream with selected quality.
+
+    """
+    res_quality = ['low', 'mid', 'high', 'ultra']
+    quality     = res_quality[int(args._addon.getSetting("video_quality"))]
+
+    fields = "".join(["media.episode_number,",
+                      "media.name,",
+                      "media.playhead,",
+                      "media.description,",
+                      "media.url,",
+                      "media.stream_data"])
+
+    values = {'media_id': args.id,
+              'fields':   fields}
+
+    request = makeAPIRequest(args, 'info', values)
+
+    if request['error']:
+        log("CR: start_playback: Connection failed, aborting..")
+        return
+
+    if args._addon.getSetting("playback_resume") == 'true':
+        playback_resume = True
+    else:
+        playback_resume = False
+
+    if playback_resume is not True:
+        resumetime = "0"
+    else:
+        resumetime = str(request['data']['playhead'])
+
+    if int(resumetime) > 0:
+        playcount = 0
+    else:
+        playcount = 1
+
+    allurl = {}
+    playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
+
+    if request['error'] is False:
+        if request['data']['stream_data'] is not None:
+            for stream in request['data']['stream_data']['streams']:
+                allurl[stream['quality']] = stream['url']
+
+            if allurl[quality] is not None:
+                url = allurl[quality]
+            elif quality == 'ultra' and allurl['high'] is not None:
+                url = allurl['high']
+            elif allurl['mid'] is not None:
+                url = allurl['mid']
+            else:
+                url = allurl['low']
+
+            item = xbmcgui.ListItem(args.name, path=url)
+            item.setInfo(type="Video", infoLabels={"Title":     args.name,
+                                                   "playcount": playcount})
+            item.setThumbnailImage(args.icon)
+            item.setProperty('TotalTime',  args.duration)
+            item.setProperty('ResumeTime', resumetime)
+
+            log("CR: start_playback: url = %s" % url)
+            player = xbmc.Player()
+
+            xbmcplugin.setResolvedUrl(int(sys.argv[1]),
+                                      succeeded=True,
+                                      listitem=item)
+
+            log("CR: start_playback: Starting ...")
+
+            timeplayed = resumetime
+
+            # Give the player time to start up
+            time.sleep(3)
+
+            s = "CR: startPlayback: player is playing == %d"
+            log(s % player.isPlaying(), xbmc.LOGDEBUG)
+
+            playlist_position = playlist.getposition()
+
+            if int(resumetime) <= 60:
+                playback_resume = False
 
             try:
-                en = ev = None
+                if playback_resume is True:
+                    player.seekTime(float(resumetime))
 
-                req = opener.open(url, options)
-                json_data = req.read()
+                while playlist_position == playlist.getposition():
+                    timeplayed = str(int(player.getTime()))
 
-                if req.headers.get('content-encoding', None) == 'gzip':
-                    json_data = gzip.GzipFile(fileobj=StringIO.StringIO(json_data))
-                    json_data = json_data.read().decode('utf-8', 'ignore')
+                    values = {'event':      'playback_status',
+                              'media_id':   args.id,
+                              'playhead':   timeplayed}
 
-                req.close()
+                    request = makeAPIRequest(args, 'log', values)
 
-                request = json.loads(json_data)
+                    # Use video timeline here
+                    xbmc.sleep(5000)
 
-            except (httplib.BadStatusLine,
-                    socket.error,
-                    urllib2.HTTPError,
-                    urllib2.URLError) as e:
+            except RuntimeError as e:
+                log("CR: start_playback: Player stopped playing: %r" % e)
 
-                log("CR: makeAPIRequest: Connection failed: %r" % e,
-                    xbmc.LOGERROR)
-
-                en, ev = sys.exc_info()[:2]
-            finally:
-                # Return dummy response if connection failed
-                if en is not None:
-                    request = {'code':    'error',
-                               'message': "Connection failed: %r, %r" % (en, ev),
-                               'error':   True}
-
-            #log("CR: makeAPIRequest: request = %s" % str(request), xbmc.LOGDEBUG)
-            log("CR: makeAPIRequest: reply =", xbmc.LOGDEBUG)
-            self.pretty(request)
-
-        else:
-            pt = self.userData['premium_type']
-            s  = "Premium type check failed, premium_type:"
-
-            request = {'code':    'error',
-                       'message': "%s %s" % (s, pt),
-                       'error':   True}
-
-            log("CR: makeAPIRequest: %s %s" % (s, pt), xbmc.LOGERROR)
-
-        return request
+            log("CR: start_playback: Finished logging: %s" % url)
 
 
-    def changeLocale(self):
-        cj           = cookielib.LWPCookieJar()
+def pretty(d, indent=1):
+    """Pretty printer for dictionaries.
 
-        notice      = self._lang(30200).encode("utf8")
-        notice_msg  = self._lang(30211).encode("utf8")
-        notice_err  = self._lang(30206).encode("utf8")
-        notice_done = self._lang(30310).encode("utf8")
-
-        icon = xbmc.translatePath(self._addon.getAddonInfo('icon'))
-
-        ua = 'Mozilla/5.0 (X11; Linux i686; rv:5.0) Gecko/20100101 Firefox/5.0'
-
-        if (self.userData['username'] != '' and
-            self.userData['password'] != ''):
-
-            log("CR: Attempting to log-in with your user account...")
-            xbmc.executebuiltin('Notification(' + notice + ','
-                                + notice_msg + ',5000,' + icon + ')')
-
-            url  = 'https://www.crunchyroll.com/?a=formhandler'
-            data = urllib.urlencode({'formname': 'RpcApiUser_Login',
-                                     'next_url': '',
-                                     'fail_url': '/login',
-                                     'name':     self.userData['username'],
-                                     'password': self.userData['password']})
-            opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
-            opener.addheaders = [('Referer',    'https://www.crunchyroll.com'),
-                                 ('User-Agent', ua)]
-            urllib2.install_opener(opener)
-            req = opener.open(url, data)
-            req.close()
-
-        else:
-            xbmc.executebuiltin('Notification(' + notice + ','
-                                + notice_err + ',5000,' + icon + ')')
-            log("CR: No Crunchyroll account found!")
-
-        url  = 'https://www.crunchyroll.com/?a=formhandler'
-        data = urllib.urlencode({'next_url': '',
-                                 'language': self.userData['API_LOCALE'],
-                                 'formname': 'RpcApiUser_UpdateDefaultSoftSubLanguage'})
-        opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
-        opener.addheaders = [('Referer',    'https://www.crunchyroll.com/acct/?action=video'),
-                             ('User-Agent', ua)]
-        self.opener = opener
-        urllib2.install_opener(opener)
-
-        # Enter in the video settings page first (doesn't work without it)
-        req = self.opener.open("https://www.crunchyroll.com/acct/?action=video")
-
-        # Now do the actual language change
-        req = self.opener.open(url, data)
-        req.close()
-
-        log('CR: Now using ' + self.userData['API_LOCALE'])
-        xbmc.executebuiltin('Notification(' + notice + ','
-                            + notice_done + ',5000,' + icon + ')')
-        log("CR: Disabling the force change language setting")
-
-        self._addon.setSetting(id="change_language", value="0")
+    """
+    if isinstance(d, list):
+        for i in d:
+            log('--', xbmc.LOGDEBUG)
+            pretty(i, indent + 1)
+    else:
+        for key, value in d.iteritems():
+            log(' ' * 2 * indent + str(key), xbmc.LOGDEBUG)
+            if isinstance(value, (dict, list)):
+                pretty(value, indent + 1)
+            else:
+                if isinstance(value, unicode):
+                    value = value.encode('utf8')
+                else:
+                    value = str(value)
+                log(' ' * 2 * (indent + 1) + value, xbmc.LOGDEBUG)
 
 
-    def usage_reporting(self):
-        log("CR: Attempting to report usage")
+def makeAPIRequest(args, method, options):
+    if args.user_data['premium_type'] in 'anime|drama|manga|UNKNOWN':
+        log("CR: makeAPIRequest: get JSON")
 
-        url  = ''.join(['https://docs.google.com/forms/d',
-                        '/1_qB4UznRfx69JrGCYmKbbeQcFc_t2-9fuNvXGGvl8mk',
-                        '/formResponse'])
-        data = urllib.urlencode({'entry_1580743010': self.userData['device_id'],
-                                 'entry_623948459':  self.userData['premium_type'],
-                                 'entry_1130326797': __version__,
-                                 'entry.590894822':  __XBMCBUILD__})
+        values = {'version': args.user_data['API_VERSION'],
+                  'locale':  args.user_data['API_LOCALE']}
 
-        ua = 'Mozilla/5.0 (X11; Linux i686; rv:5.0) Gecko/20100101 Firefox/5.0'
+        if method != 'start_session':
+            values['session_id'] = args.user_data['session_id']
+
+        values.update(options)
+        options = urllib.urlencode(values)
 
         opener = urllib2.build_opener()
-        opener.addheaders = [('User-Agent', ua)]
+        opener.addheaders = args.user_data['API_HEADERS']
         urllib2.install_opener(opener)
 
+        url = args.user_data['API_URL'] + "/" + method + ".0.json"
+
+        log("CR: makeAPIRequest: url = %s" % url)
+        log("CR: makeAPIRequest: options = %s" % options)
+
+
+        try:
+            en = ev = None
+
+            req = opener.open(url, options)
+            json_data = req.read()
+
+            if req.headers.get('content-encoding', None) == 'gzip':
+                json_data = gzip.GzipFile(fileobj=StringIO.StringIO(json_data))
+                json_data = json_data.read().decode('utf-8', 'ignore')
+
+            req.close()
+
+            request = json.loads(json_data)
+
+        except (httplib.BadStatusLine,
+                socket.error,
+                urllib2.HTTPError,
+                urllib2.URLError) as e:
+
+            log("CR: makeAPIRequest: Connection failed: %r" % e,
+                xbmc.LOGERROR)
+
+            en, ev = sys.exc_info()[:2]
+        finally:
+            # Return dummy response if connection failed
+            if en is not None:
+                request = {'code':    'error',
+                           'message': "Connection failed: %r, %r" % (en, ev),
+                           'error':   True}
+
+        #log("CR: makeAPIRequest: request = %s" % str(request), xbmc.LOGDEBUG)
+        log("CR: makeAPIRequest: reply =", xbmc.LOGDEBUG)
+        pretty(request)
+
+    else:
+        pt = args.user_data['premium_type']
+        s  = "Premium type check failed, premium_type:"
+
+        request = {'code':    'error',
+                   'message': "%s %s" % (s, pt),
+                   'error':   True}
+
+        log("CR: makeAPIRequest: %s %s" % (s, pt), xbmc.LOGERROR)
+
+    return request
+
+
+def change_locale(args):
+    cj           = cookielib.LWPCookieJar()
+
+    notice      = args._lang(30200)
+    notice_msg  = args._lang(30211)
+    notice_err  = args._lang(30206)
+    notice_done = args._lang(30310)
+
+    icon = xbmc.translatePath(args._addon.getAddonInfo('icon'))
+
+    ua = 'Mozilla/5.0 (X11; Linux i686; rv:5.0) Gecko/20100101 Firefox/5.0'
+
+    if (args.user_data['username'] != '' and
+        args.user_data['password'] != ''):
+
+        log("CR: Attempting to log-in with your user account...")
+        xbmc.executebuiltin('Notification(' + notice + ','
+                            + notice_msg + ',5000,' + icon + ')')
+
+        url  = 'https://www.crunchyroll.com/?a=formhandler'
+        data = urllib.urlencode({'formname': 'RpcApiUser_Login',
+                                 'next_url': '',
+                                 'fail_url': '/login',
+                                 'name':     args.user_data['username'],
+                                 'password': args.user_data['password']})
+        opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+        opener.addheaders = [('Referer',    'https://www.crunchyroll.com'),
+                             ('User-Agent', ua)]
+        urllib2.install_opener(opener)
         req = opener.open(url, data)
         req.close()
 
+    else:
+        xbmc.executebuiltin('Notification(' + notice + ','
+                            + notice_err + ',5000,' + icon + ')')
+        log("CR: No Crunchyroll account found!")
+
+    url  = 'https://www.crunchyroll.com/?a=formhandler'
+    data = urllib.urlencode({'next_url': '',
+                             'language': args.user_data['API_LOCALE'],
+                             'formname': 'RpcApiUser_UpdateDefaultSoftSubLanguage'})
+    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+    opener.addheaders = [('Referer',    'https://www.crunchyroll.com/acct/?action=video'),
+                         ('User-Agent', ua)]
+    urllib2.install_opener(opener)
+
+    # Enter in the video settings page first (doesn't work without it)
+    req = opener.open("https://www.crunchyroll.com/acct/?action=video")
+
+    # Now do the actual language change
+    req = opener.open(url, data)
+    req.close()
+
+    log('CR: Now using ' + args.user_data['API_LOCALE'])
+    xbmc.executebuiltin('Notification(' + notice + ','
+                        + notice_done + ',5000,' + icon + ')')
+    log("CR: Disabling the force change language setting")
+
+    args._addon.setSetting(id="change_language", value="0")
+
+
+def usage_reporting(args):
+    log("CR: Attempting to report usage")
+
+    url  = ''.join(['https://docs.google.com/forms/d',
+                    '/1_qB4UznRfx69JrGCYmKbbeQcFc_t2-9fuNvXGGvl8mk',
+                    '/formResponse'])
+    data = urllib.urlencode({'entry_1580743010': args.user_data['device_id'],
+                             'entry_623948459':  args.user_data['premium_type'],
+                             'entry_1130326797': __version__,
+                             'entry.590894822':  __XBMCBUILD__})
+
+    ua = 'Mozilla/5.0 (X11; Linux i686; rv:5.0) Gecko/20100101 Firefox/5.0'
+
+    opener = urllib2.build_opener()
+    opener.addheaders = [('User-Agent', ua)]
+    urllib2.install_opener(opener)
+
+    req = opener.open(url, data)
+    req.close()
 
 
 def log(msg,
         level=xbmc.LOGNOTICE,
-        rex=re.compile(r'((?<=password=)[^&]*|(?<=account=)[^&]*)')):
+        rex=re.compile(r"((?<=password=)[^&]*"
+                       r"|(?<=account=)[^&]*"
+                       r"|(?<='password':\s')[^']*"
+                       r"|(?<='username':\s')[^']*)")):
     """XBMC log with matched regex blanked out.
 
     By default blank out user account name and password.
