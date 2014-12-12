@@ -33,6 +33,7 @@ xbmc.log("[PLUGIN] '%s: version %s' initialized!" % (__plugin__, __version__))
 
 if __name__ == "__main__":
     from resources.lib import crunchy_main
+
     crunchy_main.main()
 
 sys.modules.clear()

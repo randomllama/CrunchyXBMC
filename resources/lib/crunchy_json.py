@@ -451,28 +451,28 @@ def list_series(args):
             counter = counter + 1
 
             # Only available on some series
-            year        = ('None'
-                               if series['year'] is None
-                               else series['year'])
-            description = (''
-                               if series['description'] is None
-                               else series['description'].encode('utf-8'))
-            thumb       = (''
-                               if (series['portrait_image'] is None or
-                                  series['portrait_image']['large_url'] is None or
-                                  'portrait_image' not in series or
-                                  'large_url' not in series['portrait_image'])
-                               else series['portrait_image']['full_url'])
-            art         = (''
-                               if (series['landscape_image'] is None or
-                                  series['landscape_image']['full_url'] is None or
-                                  'landscape_image' not in series or
-                                  'full_url' not in series['landscape_image'])
-                               else series['landscape_image']['full_url'])
-            rating      = ('0'
-                               if (series['rating'] == '' or
-                                   'rating' not in series)
-                               else series['rating'])
+            year   = ('None'
+                          if series['year'] is None
+                          else series['year'])
+            desc   = (''
+                          if series['description'] is None
+                          else series['description'].encode('utf-8'))
+            thumb  = (''
+                          if (series['portrait_image'] is None or
+                              series['portrait_image']['large_url'] is None or
+                              'portrait_image' not in series or
+                              'large_url' not in series['portrait_image'])
+                          else series['portrait_image']['full_url'])
+            art    = (''
+                          if (series['landscape_image'] is None or
+                              series['landscape_image']['full_url'] is None or
+                              'landscape_image' not in series or
+                              'full_url' not in series['landscape_image'])
+                          else series['landscape_image']['full_url'])
+            rating = ('0'
+                          if (series['rating'] == '' or
+                              'rating' not in series)
+                          else series['rating'])
 
             # Crunchyroll seems to like passing series
             # without these things
@@ -490,7 +490,7 @@ def list_series(args):
                              'count':        str(series['media_count']),
                              'Thumb':        thumb,
                              'Fanart_Image': art,
-                             'plot':         description,
+                             'plot':         desc,
                              'year':         year},
                             isFolder=True,
                             queued=queued)
@@ -710,8 +710,7 @@ def list_media_items(args, request, series_name, season, mode, fanart):
                            if media['description'] is None
                            else media['description'].encode('utf-8'))
         # Set the description for upcoming episodes
-        description = ("This episode will be available in "
-                       + str(available_in)
+        description = ("This episode will be available in " + str(available_in)
                            if media['available'] is False
                            else description)
 
@@ -837,14 +836,14 @@ def Queue(args):
         if request['error'] is False:
             log("CR: Queue: has %d series" % len(request['data']))
             for series in request['data']:
-                series      = series['series']
+                series = series['series']
                 # Only available for some series
-                year        = ('None'
-                                   if series['year'] is None
-                                   else series['year'])
-                description = (''
-                                   if series['description'] is None
-                                   else series['description'].encode('utf-8'))
+                year   = ('None'
+                              if series['year'] is None
+                              else series['year'])
+                desc   = (''
+                              if series['description'] is None
+                              else series['description'].encode('utf-8'))
 
                 thumb  = (''
                               if (series['portrait_image'] is None or
@@ -852,12 +851,14 @@ def Queue(args):
                                   'portrait_image' not in series or
                                   'large_url' not in series['portrait_image'])
                               else series['portrait_image']['full_url'])
-                art    = ('' if (series['landscape_image'] is None or
-                                 series['landscape_image']['full_url'] is None or
-                                 'landscape_image' not in series or
-                                 'full_url' not in series['landscape_image'])
+                art    = (''
+                              if (series['landscape_image'] is None or
+                                  series['landscape_image']['full_url'] is None or
+                                  'landscape_image' not in series or
+                                  'full_url' not in series['landscape_image'])
                               else series['landscape_image']['full_url'])
-                rating = ('0' if (series['rating'] == '' or
+                rating = ('0'
+                              if (series['rating'] == '' or
                                   'rating' not in series)
                               else series['rating'])
 
@@ -874,7 +875,7 @@ def Queue(args):
                                  'series_id':    series['series_id'],
                                  'Thumb':        thumb,
                                  'Fanart_Image': art,
-                                 'plot':         description,
+                                 'plot':         desc,
                                  'year':         year},
                                 isFolder=True,
                                 queued=True)
