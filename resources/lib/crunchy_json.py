@@ -987,7 +987,7 @@ def start_playback(args):
 
     if request['error']:
         log("CR: start_playback: Connection failed, aborting..")
-        sys.exit(1)
+        return
 
     if args._addon.getSetting("playback_resume") == 'true':
         playback_resume = True

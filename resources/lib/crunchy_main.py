@@ -349,8 +349,11 @@ def main():
         add_item(args,
                 {'title': 'Session failed: Check login'})
         endofdirectory()
-        sys.exit(1)
 
-    xbmcplugin.setContent(int(sys.argv[1]), 'movies')
+    else:
+        xbmcplugin.setContent(int(sys.argv[1]), 'movies')
 
-    check_mode(args)
+        check_mode(args)
+
+        # Close shelf
+        args.user_data.close()
