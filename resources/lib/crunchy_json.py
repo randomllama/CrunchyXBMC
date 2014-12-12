@@ -220,7 +220,6 @@ def loadShelf(args):
                 + " member")
 
             args.user_data = userData
-            userData.close()
 
             return True
 
@@ -284,7 +283,6 @@ def loadShelf(args):
                     + str(userData['premium_type']) + " member")
 
                 args.user_data = userData
-                userData.close()
 
                 return True
 
@@ -374,7 +372,6 @@ def loadShelf(args):
                         + str(userData['premium_type']) + " member")
 
                     args.user_data = userData
-                    userData.close()
 
                     return True
 

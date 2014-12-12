@@ -347,7 +347,11 @@ def main():
     """
     args = parseArgs()
 
-    crj.loadShelf(args)
+    if crj.loadShelf(args) is False:
+        addItem(args,
+                {'Title': 'Session Failed: Check Login'})
+        endofdirectory()
+        sys.exit(1)
 
     xbmcplugin.setContent(int(sys.argv[1]), 'movies')
 
