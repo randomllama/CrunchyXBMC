@@ -49,7 +49,7 @@ __XBMCBUILD__ = xbmc.getInfoLabel("System.BuildVersion") + " " + sys.platform
 
 
 
-def loadShelf(args):
+def load_shelf(args):
     notice_msg     = args._lang(30200)
     setup_msg      = args._lang(30203)
     acc_type_error = args._lang(30312)
@@ -231,9 +231,9 @@ def loadShelf(args):
             args.user_data = userData = None
             userData.close()
 
-            crm.addItem(args,
-                        {'Title': acc_type_error,
-                         'mode':  'Fail'})
+            crm.add_item(args,
+                         {'title': acc_type_error,
+                          'mode':  'fail'})
             crm.endofdirectory('none')
 
             return False
@@ -294,9 +294,9 @@ def loadShelf(args):
                 args.user_data = userData = None
                 userData.close()
 
-                crm.addItem(args,
-                            {'Title': acc_type_error,
-                             'mode':  'Fail'})
+                crm.add_item(args,
+                             {'title': acc_type_error,
+                              'mode':  'fail'})
                 crm.endofdirectory('none')
 
                 return False
@@ -383,9 +383,9 @@ def loadShelf(args):
                     args.user_data = userData = None
                     userData.close()
 
-                    crm.addItem(args,
-                                {'Title': acc_type_error,
-                                 'mode':  'Fail'})
+                    crm.add_item(args,
+                                 {'title': acc_type_error,
+                                  'mode':  'fail'})
                     crm.endofdirectory('none')
 
                     return False
@@ -435,7 +435,7 @@ def list_series(args):
                        "image.large_url,",
                        "series.landscape_image,",
                        "image.full_url"])
-    options = {'media_type': args.media_type.lower(),
+    options = {'media_type': args.media_type,
                'filter':     args.filterx,
                'fields':     fields,
                'limit':      '64',
@@ -483,43 +483,43 @@ def list_series(args):
 
                 queued = (series['series_id'] in queue)
 
-                crm.addItem(args,
-                            {'Title':        series['name'].encode("utf8"),
-                             'mode':         'list_coll',
-                             'series_id':    series['series_id'],
-                             'count':        str(series['media_count']),
-                             'Thumb':        thumb,
-                             'Fanart_Image': art,
-                             'plot':         desc,
-                             'year':         year},
-                            isFolder=True,
-                            queued=queued)
+                crm.add_item(args,
+                             {'title':        series['name'].encode("utf8"),
+                              'mode':         'list_coll',
+                              'series_id':    series['series_id'],
+                              'count':        str(series['media_count']),
+                              'thumb':        thumb,
+                              'fanart_image': art,
+                              'plot':         desc,
+                              'year':         year},
+                             isFolder=True,
+                             queued=queued)
 
         if counter >= 64:
             offset = str(int(args.offset) + counter)
-            crm.addItem(args,
-                        {'Title':      '...load more',
-                         'mode':       'list_series',
-                         'media_type': args.media_type,
-                         'filterx':    args.filterx,
-                         'offset':     offset})
+            crm.add_item(args,
+                         {'title':      '...load more',
+                          'mode':       'list_series',
+                          'media_type': args.media_type,
+                          'filterx':    args.filterx,
+                          'offset':     offset})
 
     crm.endofdirectory('none')
 
 
 def list_categories(args):
-    options = {'media_type': args.media_type.lower()}
+    options = {'media_type': args.media_type}
 
     request = makeAPIRequest(args, 'categories', options)
 
     if request['error'] is False:
         for i in request['data'][args.filterx]:
-            crm.addItem(args,
-                        {'Title':      i['label'].encode("utf8"),
-                         'mode':       'list_series',
-                         'media_type': args.media_type,
-                         'filterx':    'tag:' + i['tag']},
-                        isFolder=True)
+            crm.add_item(args,
+                         {'title':      i['label'].encode("utf8"),
+                          'mode':       'list_series',
+                          'media_type': args.media_type,
+                          'filterx':    'tag:' + i['tag']},
+                         isFolder=True)
 
     crm.endofdirectory('none')
 
@@ -550,20 +550,20 @@ def list_collections(args):
 
             for collection in request['data']:
                 complete = '1' if collection['complete'] else '0'
-                crm.addItem(args,
-                            {'Title':        collection['name'].encode("utf8"),
-                             'filterx':      args.name,
-                             'mode':         'list_media',
-                             'count':        str(args.count),
-                             'id':           collection['collection_id'],
-                             'plot':         collection['description'].encode("utf8"),
-                             'complete':     complete,
-                             'season':       str(collection['season']),
-                             'series_id':    args.series_id,
-                             'Thumb':        args.icon,
-                             'Fanart_Image': args.fanart},
-                            isFolder=True,
-                            queued=queued)
+                crm.add_item(args,
+                             {'title':        collection['name'].encode("utf8"),
+                              'filterx':      args.name,
+                              'mode':         'list_media',
+                              'count':        str(args.count),
+                              'id':           collection['collection_id'],
+                              'plot':         collection['description'].encode("utf8"),
+                              'complete':     complete,
+                              'season':       str(collection['season']),
+                              'series_id':    args.series_id,
+                              'thumb':        args.icon,
+                              'fanart_image': args.fanart},
+                             isFolder=True,
+                             queued=queued)
 
     crm.endofdirectory('none')
 
@@ -730,24 +730,24 @@ def list_media_items(args, request, series_name, season, mode, fanart):
         url = media['url']
         media_id = url.split('-')[-1]
 
-        crm.addItem(args,
-                    {'Title':        name.encode("utf8"),
-                     'mode':         'videoplay',
-                     'id':           media_id.encode("utf8"),
-                     'Thumb':        thumb.encode("utf8"),
-                     'url':          url.encode("utf8"),
-                     'Fanart_Image': fanart,
-                     'plot':         description,
-                     'year':         year,
-                     'playhead':     playhead,
-                     'duration':     duration},
-                    isFolder=False,
-                    queued=queued)
+        crm.add_item(args,
+                     {'title':        name.encode("utf8"),
+                      'mode':         'videoplay',
+                      'id':           media_id.encode("utf8"),
+                      'thumb':        thumb.encode("utf8"),
+                      'url':          url.encode("utf8"),
+                      'fanart_image': fanart,
+                      'plot':         description,
+                      'year':         year,
+                      'playhead':     playhead,
+                      'duration':     duration},
+                     isFolder=False,
+                     queued=queued)
 
     crm.endofdirectory('none')
 
 
-def History(args):
+def history(args):
     fields  = "".join(["media.episode_number,",
                        "media.name,",
                        "media.description,",
@@ -778,7 +778,7 @@ def History(args):
                                 'fanart')
 
 
-def Queue(args):
+def queue(args):
     queue_type = args._addon.getSetting("queue_type")
 
     log("CR: Queue: queue type is " + str(queue_type))
@@ -869,16 +869,16 @@ def Queue(args):
                     'name' in series and
                     series['media_count'] > 0):
 
-                    crm.addItem(args,
-                                {'Title':        series['name'].encode("utf8"),
-                                 'mode':         'list_coll',
-                                 'series_id':    series['series_id'],
-                                 'Thumb':        thumb,
-                                 'Fanart_Image': art,
-                                 'plot':         desc,
-                                 'year':         year},
-                                isFolder=True,
-                                queued=True)
+                    crm.add_item(args,
+                                 {'title':        series['name'].encode("utf8"),
+                                  'mode':         'list_coll',
+                                  'series_id':    series['series_id'],
+                                  'thumb':        thumb,
+                                  'fanart_image': art,
+                                  'plot':         desc,
+                                  'year':         year},
+                                 isFolder=True,
+                                 queued=True)
 
                     log("CR: Queue: series = '%s' queued"
                         % series['name'.encode('utf8')])
@@ -966,7 +966,7 @@ def remove_from_queue(args):
     xbmc.executebuiltin('XBMC.Container.Refresh')
 
 
-def startPlayback(args):
+def start_playback(args):
     """Play video stream with selected quality.
 
     """
@@ -986,7 +986,7 @@ def startPlayback(args):
     request = makeAPIRequest(args, 'info', values)
 
     if request['error']:
-        log("CR: startPlayback: Connection failed, aborting..")
+        log("CR: start_playback: Connection failed, aborting..")
         sys.exit(1)
 
     if args._addon.getSetting("playback_resume") == 'true':
@@ -1028,14 +1028,14 @@ def startPlayback(args):
             item.setProperty('TotalTime',  args.duration)
             item.setProperty('ResumeTime', resumetime)
 
-            log("CR: startPlayback: url = %s" % url)
+            log("CR: start_playback: url = %s" % url)
             player = xbmc.Player()
 
             xbmcplugin.setResolvedUrl(int(sys.argv[1]),
                                       succeeded=True,
                                       listitem=item)
 
-            log("CR: startPlayback: Starting ...")
+            log("CR: start_playback: Starting ...")
 
             timeplayed = resumetime
 
@@ -1067,9 +1067,9 @@ def startPlayback(args):
                     xbmc.sleep(5000)
 
             except RuntimeError as e:
-                log("CR: startPlayback: Player stopped playing: %r" % e)
+                log("CR: start_playback: Player stopped playing: %r" % e)
 
-            log("CR: startPlayback: Finished logging: %s" % url)
+            log("CR: start_playback: Finished logging: %s" % url)
 
 
 def pretty(d, indent=1):
@@ -1163,7 +1163,7 @@ def makeAPIRequest(args, method, options):
     return request
 
 
-def changeLocale(args):
+def change_locale(args):
     cj           = cookielib.LWPCookieJar()
 
     notice      = args._lang(30200)

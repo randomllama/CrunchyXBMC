@@ -30,7 +30,7 @@ from crunchy_json import log
 
 
 
-class updateArgs(object):
+class Args(object):
 
     def __init__(self, *args, **kwargs):
         """Initialize arguments object.
@@ -81,20 +81,20 @@ def endofdirectory(sortMethod='none'):
                               updateListing = dontAddToHierarchy)
 
 
-def addItem(args,
-            info,
-            isFolder=True,
-            total_items=0,
-            queued=False,
-            rex=re.compile(r'(?<=mode=)[^&]*')):
+def add_item(args,
+             info,
+             isFolder=True,
+             total_items=0,
+             queued=False,
+             rex=re.compile(r'(?<=mode=)[^&]*')):
     """Add item to directory listing.
 
     """
     # Defaults in dict. Use 'None' instead of None so it is compatible for
     # quote_plus in parseArgs.
     info.setdefault('url',          'None')
-    info.setdefault('Thumb',        'None')
-    info.setdefault('Fanart_Image',
+    info.setdefault('thumb',        'None')
+    info.setdefault('fanart_image',
                     xbmc.translatePath(args._addon.getAddonInfo('fanart')))
     info.setdefault('mode',         'None')
     info.setdefault('count',        '0')
@@ -107,7 +107,7 @@ def addItem(args,
     info.setdefault('page_url',     'None')
     info.setdefault('complete',     'True')
     info.setdefault('media_type',   'None')
-    info.setdefault('Title',        'None')
+    info.setdefault('title',        'None')
     info.setdefault('year',         '0')
     info.setdefault('playhead',     '0')
     info.setdefault('duration',     '0')
@@ -117,15 +117,15 @@ def addItem(args,
     u = sys.argv[0]    +\
         '?url='        + urllib.quote_plus(info['url'])          +\
         '&mode='       + urllib.quote_plus(info['mode'])         +\
-        '&name='       + urllib.quote_plus(info['Title'])        +\
+        '&name='       + urllib.quote_plus(info['title'])        +\
         '&id='         + urllib.quote_plus(info['id'])           +\
         '&count='      + urllib.quote_plus(info['count'])        +\
         '&series_id='  + urllib.quote_plus(info['series_id'])    +\
         '&filterx='    + urllib.quote_plus(info['filterx'])      +\
         '&offset='     + urllib.quote_plus(info['offset'])       +\
-        '&icon='       + urllib.quote_plus(info['Thumb'])        +\
+        '&icon='       + urllib.quote_plus(info['thumb'])        +\
         '&complete='   + urllib.quote_plus(info['complete'])     +\
-        '&fanart='     + urllib.quote_plus(info['Fanart_Image']) +\
+        '&fanart='     + urllib.quote_plus(info['fanart_image']) +\
         '&season='     + urllib.quote_plus(info['season'])       +\
         '&media_type=' + urllib.quote_plus(info['media_type'])   +\
         '&year='       + urllib.quote_plus(info['year'])         +\
@@ -134,13 +134,13 @@ def addItem(args,
         '&plot='       + urllib.quote_plus(info['plot']          +'%20')
 
     # Create list item
-    li = xbmcgui.ListItem(label          = info['Title'],
-                          thumbnailImage = info['Thumb'])
+    li = xbmcgui.ListItem(label          = info['title'],
+                          thumbnailImage = info['thumb'])
     li.setInfo(type       = "Video",
-               infoLabels = {"Title": info['Title'],
+               infoLabels = {"Title": info['title'],
                              "Plot":  info['plot'],
                              "Year":  info['year']})
-    li.setProperty("Fanart_Image", info['Fanart_Image'])
+    li.setProperty("Fanart_Image", info['fanart_image'])
 
     # Add context menu
     s1  = re.sub(rex, 'add_to_queue',      u)
@@ -149,7 +149,7 @@ def addItem(args,
     cm = [('Add-on settings', 'XBMC.Addon.OpenSettings(%s)' % args._id)]
 
     if (args.mode is not None and
-        args.mode not in 'Channels|list_categories'):
+        args.mode not in 'channels|list_categories'):
 
         cm.insert(0, ('Queue Video', 'XBMC.Action(Queue)'))
 
@@ -183,39 +183,39 @@ def addItem(args,
                                 totalItems = total_items)
 
 
-def showMain(args):
+def show_main(args):
     """Show main menu.
 
     """
     change_language = args._addon.getSetting("change_language")
 
-    if crj.loadShelf(args) is False:
-        addItem(args,
-                {'Title': 'Session Failed: Check Login'})
+    if crj.load_shelf(args) is False:
+        add_item(args,
+                 {'title': 'Session failed: Check login'})
         endofdirectory()
     else:
         if change_language != "0":
-            crj.changeLocale()
+            crj.change_locale()
 
-        Anime   = args._lang(30100)
-        Drama   = args._lang(30104)
-        Queue   = args._lang(30105)
-        History = args._lang(30111)
+        anime   = args._lang(30100)
+        drama   = args._lang(30104)
+        queue   = args._lang(30105)
+        history = args._lang(30111)
 
-        addItem(args,
-                {'Title':      Queue,
-                 'mode':       'queue'})
-        addItem(args,
-                {'Title':      History,
-                 'mode':       'History'})
-        addItem(args,
-                {'Title':      Anime,
-                  'mode':       'Channels',
-                  'media_type': 'Anime'})
-        addItem(args,
-                {'Title':      Drama,
-                  'mode':       'Channels',
-                  'media_type': 'Drama'})
+        add_item(args,
+                 {'title':      queue,
+                  'mode':       'queue'})
+        add_item(args,
+                 {'title':      history,
+                  'mode':       'history'})
+        add_item(args,
+                 {'title':      anime,
+                  'mode':       'channels',
+                  'media_type': 'anime'})
+        add_item(args,
+                 {'title':      drama,
+                  'mode':       'channels',
+                  'media_type': 'drama'})
         endofdirectory()
 
 
@@ -224,87 +224,85 @@ def channels(args):
 
     """
     popular         = args._lang(30103)
-    Simulcasts      = args._lang(30106)
-    Recently_Added  = args._lang(30102)
+    simulcasts      = args._lang(30106)
+    recently_added  = args._lang(30102)
     alpha           = args._lang(30112)
-    Browse_by_Genre = args._lang(30107)
+    browse_by_genre = args._lang(30107)
     seasons         = args._lang(30110)
 
-    media_type      = args.media_type
-
-    addItem(args,
-            {'Title':      popular,
-             'mode':       'list_series',
-             'media_type': media_type,
-             'filterx':    'popular',
-             'offset':     '0'})
-    addItem(args,
-            {'Title':      Simulcasts,
-             'mode':       'list_series',
-             'media_type': media_type,
-             'filterx':    'simulcast',
-             'offset':     '0'})
-    addItem(args,
-            {'Title':      Recently_Added,
-             'mode':       'list_series',
-             'media_type': media_type,
-             'filterx':    'updated',
-             'offset':     '0'})
-    addItem(args,
-            {'Title':      alpha,
-             'mode':       'list_series',
-             'media_type': media_type,
-             'filterx':    'alpha',
-             'offset':     '0'})
-    addItem(args,
-            {'Title':      Browse_by_Genre,
-             'mode':       'list_categories',
-             'media_type': media_type,
-             'filterx':    'genre',
-             'offset':     '0'})
-    addItem(args,
-            {'Title':      seasons,
-             'mode':       'list_categories',
-             'media_type': media_type,
-             'filterx':    'season',
-             'offset':     '0'})
+    add_item(args,
+             {'title':      popular,
+              'mode':       'list_series',
+              'media_type': args.media_type,
+              'filterx':    'popular',
+              'offset':     '0'})
+    add_item(args,
+             {'title':      simulcasts,
+              'mode':       'list_series',
+              'media_type': args.media_type,
+              'filterx':    'simulcast',
+              'offset':     '0'})
+    add_item(args,
+             {'title':      recently_added,
+              'mode':       'list_series',
+              'media_type': args.media_type,
+              'filterx':    'updated',
+              'offset':     '0'})
+    add_item(args,
+             {'title':      alpha,
+              'mode':       'list_series',
+              'media_type': args.media_type,
+              'filterx':    'alpha',
+              'offset':     '0'})
+    add_item(args,
+             {'title':      browse_by_genre,
+              'mode':       'list_categories',
+              'media_type': args.media_type,
+              'filterx':    'genre',
+              'offset':     '0'})
+    add_item(args,
+             {'title':      seasons,
+              'mode':       'list_categories',
+              'media_type': args.media_type,
+              'filterx':    'season',
+              'offset':     '0'})
     endofdirectory()
 
 
-def Fail(args):
+def fail(args):
     """Unrecognized mode found.
 
     """
     badstuff = args._lang(30207)
 
-    addItem(args,
-            {'Title': badstuff,
-             'mode':  'Fail'})
+    add_item(args,
+             {'title': badstuff,
+              'mode':  'fail'})
 
-    log("CR: Main: checkMode fall through", xbmc.LOGWARNING)
+    log("CR: Main: check_mode fall through", xbmc.LOGWARNING)
 
     endofdirectory()
 
 
-def parseArgs():
+def parse_args():
     """Decode arguments.
 
     """
     if (sys.argv[2]):
-        return updateArgs(**dict([p.split('=')
-                                      for p in sys.argv[2][1:].split('&')]))
+        return Args(**dict([p.split('=')
+                                for p in sys.argv[2][1:].split('&')]))
 
     else:
-        # updateArgs will turn the 'None' into None.
+        # Args will turn the 'None' into None.
         # Don't simply define it as None because unquote_plus in updateArgs
         # will throw an exception.
         # This is a pretty ugly solution.
-        return updateArgs(mode = 'None',
-                          url  = 'None',
-                          name = 'None')
+        return Args(mode = 'None',
+                    url  = 'None',
+                    name = 'None')
 
 
-def checkMode(args):
+def check_mode(args):
     """Run mode-specific functions.
 
     """
@@ -316,8 +314,8 @@ def checkMode(args):
     log("CR: Main: mode = %s" % mode)
 
     if mode is None:
-        showMain(args)
-    elif mode == 'Channels':
+        show_main(args)
+    elif mode == 'channels':
         channels(args)
     elif mode == 'list_series':
         crj.list_series(args)
@@ -327,32 +325,32 @@ def checkMode(args):
         crj.list_collections(args)
     elif mode == 'list_media':
         crj.list_media(args)
-    elif mode == 'History':
-        crj.History(args)
+    elif mode == 'history':
+        crj.history(args)
     elif mode == 'queue':
-        crj.Queue(args)
+        crj.queue(args)
     elif mode == 'add_to_queue':
         crj.add_to_queue(args)
     elif mode == 'remove_from_queue':
         crj.remove_from_queue(args)
     elif mode == 'videoplay':
-        crj.startPlayback(args)
+        crj.start_playback(args)
     else:
-        Fail(args)
+        fail(args)
 
 
 def main():
     """Main function for the addon.
 
     """
-    args = parseArgs()
+    args = parse_args()
 
-    if crj.loadShelf(args) is False:
-        addItem(args,
-                {'Title': 'Session Failed: Check Login'})
+    if crj.load_shelf(args) is False:
+        add_item(args,
+                {'title': 'Session failed: Check login'})
         endofdirectory()
         sys.exit(1)
 
     xbmcplugin.setContent(int(sys.argv[1]), 'movies')
 
-    checkMode(args)
+    check_mode(args)
