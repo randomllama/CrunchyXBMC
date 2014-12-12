@@ -66,8 +66,6 @@ def loadShelf(args):
 
     current_datetime = datetime.datetime.now(dateutil.tz.tzutc())
 
-    global user_data
-
     try:
         # Load persistent vars
         userData = shelve.open(shelf_path, writeback=True)
@@ -117,7 +115,7 @@ def loadShelf(args):
         userData.setdefault('premium_type', 'UNKNOWN')
         userData.setdefault('lastreported', (current_datetime -
                                              durel.relativedelta(hours = +24)))
-        user_data = userData
+        args.user_data = userData
 
     except:
         log("CR: Unexpected error:", sys.exc_info(), xbmc.LOGERROR)
@@ -132,7 +130,7 @@ def loadShelf(args):
         userData['session_expires'] = (current_datetime -
                                        durel.relativedelta(hours = +24))
 
-        user_data = userData
+        args.user_data = userData
         userData.close()
 
         log("CR: Unable to load shelve")
@@ -152,7 +150,7 @@ def loadShelf(args):
                    'device_type':  userData['API_DEVICE_TYPE'],
                    'access_token': userData['API_ACCESS_TOKEN']}
 
-        request = makeAPIRequest('start_session', options)
+        request = makeAPIRequest(args, 'start_session', options)
 
         if request['error'] is False:
             userData['session_id']      = request['data']['session_id']
@@ -173,7 +171,7 @@ def loadShelf(args):
         if not userData['username'] or not userData['password']:
             log("CR: No username or password set")
 
-            user_data = userData
+            args.user_data = userData
             userData.close()
 
             ex = 'XBMC.Notification("' + notice_msg + ':","' \
@@ -189,7 +187,7 @@ def loadShelf(args):
             options = {'password':   userData['password'],
                        'account':    userData['username']}
 
-            request = makeAPIRequest('login', options)
+            request = makeAPIRequest(args, 'login', options)
 
             if request['error'] is False:
                 userData['auth_token']   = request['data']['auth']
@@ -204,7 +202,7 @@ def loadShelf(args):
                 log("CR: Error logging in new session. Error message: "
                     + str(request['message']), xbmc.LOGERROR)
 
-                user_data = userData
+                args.user_data = userData
                 userData.close()
 
                 return False
@@ -213,15 +211,15 @@ def loadShelf(args):
         if current_datetime > userData['lastreported']:
             userData['lastreported'] = (current_datetime +
                                         durel.relativedelta(hours = +24))
-            user_data = userData
-            usage_reporting()
+            args.user_data = userData
+            usage_reporting(args)
 
         # Verify user is premium
         if userData['premium_type'] in 'anime|drama|manga':
             log("CR: User is a premium " + str(userData['premium_type'])
                 + " member")
 
-            user_data = userData
+            args.user_data = userData
             userData.close()
 
             return True
@@ -231,7 +229,7 @@ def loadShelf(args):
             xbmc.executebuiltin('Notification(' + notice_msg + ',' +
                                 acc_type_error + ',5000)')
 
-            user_data = userData = None
+            args.user_data = userData = None
             userData.close()
 
             crm.addItem(args,
@@ -256,7 +254,7 @@ def loadShelf(args):
                    'access_token': userData['API_ACCESS_TOKEN'],
                    'auth':         userData['auth_token']}
 
-        request = makeAPIRequest('start_session', options)
+        request = makeAPIRequest(args, 'start_session', options)
 
         if request['error'] is False:
             userData['session_id']      = request['data']['session_id']
@@ -277,15 +275,15 @@ def loadShelf(args):
             if current_datetime > userData['lastreported']:
                 userData['lastreported'] = (current_datetime +
                                             durel.relativedelta(hours = +24))
-                user_data = userData
-                usage_reporting()
+                args.user_data = userData
+                usage_reporting(args)
 
             # Verify user is premium
             if userData['premium_type'] in 'anime|drama|manga':
                 log("CR: User is a premium "
                     + str(userData['premium_type']) + " member")
 
-                user_data = userData
+                args.user_data = userData
                 userData.close()
 
                 return True
@@ -295,7 +293,7 @@ def loadShelf(args):
                 xbmc.executebuiltin('Notification(' + notice_msg + ','
                                     + acc_type_error + ',5000)')
 
-                user_data = userData = None
+                args.user_data = userData = None
                 userData.close()
 
                 crm.addItem(args,
@@ -316,7 +314,7 @@ def loadShelf(args):
             log("CR: Error restarting session. Error message: "
                 + str(request['message']), xbmc.LOGERROR)
 
-            user_data = userData
+            args.user_data = userData
             userData.Save()
 
             return False
@@ -355,7 +353,8 @@ def loadShelf(args):
                                "image.full_url"])
             options = {'media_types': "anime|drama",
                        'fields':      fields}
-            request = makeAPIRequest('queue', options)
+
+            request = makeAPIRequest(args, 'queue', options)
 
             if request['error'] is False:
                 log("CR: A valid session was detected."
@@ -366,15 +365,15 @@ def loadShelf(args):
                 if current_datetime > userData['lastreported']:
                     userData['lastreported'] = (current_datetime +
                                                 durel.relativedelta(hours = +24))
-                    user_data = userData
-                    usage_reporting()
+                    args.user_data = userData
+                    usage_reporting(args)
 
                 # Verify user is premium
                 if userData['premium_type'] in 'anime|drama|manga':
                     log("CR: User is a premium "
                         + str(userData['premium_type']) + " member")
 
-                    user_data = userData
+                    args.user_data = userData
                     userData.close()
 
                     return True
@@ -384,7 +383,7 @@ def loadShelf(args):
                     xbmc.executebuiltin('Notification(' + notice_msg + ','
                                         + acc_type_error + ',5000)')
 
-                    user_data = userData = None
+                    args.user_data = userData = None
                     userData.close()
 
                     crm.addItem(args,
@@ -403,7 +402,7 @@ def loadShelf(args):
                 del userData['auth_token']
                 del userData['session_expires']
 
-                user_data = userData
+                args.user_data = userData
                 userData.close()
 
                 return False
@@ -420,7 +419,7 @@ def loadShelf(args):
 
         log("CR: Something in the login process went wrong!")
 
-        user_data = userData
+        args.user_data = userData
         userData.close()
 
         return False
@@ -445,9 +444,9 @@ def list_series(args):
                'limit':      '64',
                'offset':     int(args.offset)}
 
-    request = makeAPIRequest('list_series', options)
+    request = makeAPIRequest(args, 'list_series', options)
 
-    queue   = get_queued()
+    queue   = get_queued(args)
 
     if request['error'] is False:
         counter = 0
@@ -514,7 +513,7 @@ def list_series(args):
 def list_categories(args):
     options = {'media_type': args.media_type.lower()}
 
-    request = makeAPIRequest('categories', options)
+    request = makeAPIRequest(args, 'categories', options)
 
     if request['error'] is False:
         for i in request['data'][args.filterx]:
@@ -540,7 +539,7 @@ def list_collections(args):
                'sort':      'desc',
                'limit':     args.count}
 
-    request = makeAPIRequest('list_collections', options)
+    request = makeAPIRequest(args, 'list_collections', options)
 
     if request['error'] is False:
         if len(request['data']) <= 1:
@@ -550,7 +549,7 @@ def list_collections(args):
 
                 return list_media(args)
         else:
-            queued = (args.series_id in get_queued())
+            queued = (args.series_id in get_queued(args))
 
             for collection in request['data']:
                 complete = '1' if collection['complete'] else '0'
@@ -596,7 +595,7 @@ def list_media(args):
                'sort':          sort,
                'limit':         '256'}
 
-    request = makeAPIRequest('list_media', options)
+    request = makeAPIRequest(args, 'list_media', options)
 
     if request['error'] is False:
         return list_media_items(args,
@@ -611,7 +610,7 @@ def list_media_items(args, request, series_name, season, mode, fanart):
     """List video episodes.
 
     """
-    queue = get_queued()
+    queue = get_queued(args)
 
     for media in request:
         queued = ((media['series']['series_id']
@@ -772,7 +771,7 @@ def History(args):
                'fields':      fields,
                'limit':       '256'}
 
-    request = makeAPIRequest('recently_watched', options)
+    request = makeAPIRequest(args, 'recently_watched', options)
 
     if request['error'] is False:
         return list_media_items(args,
@@ -808,7 +807,7 @@ def Queue(args):
         options = {'media_types': "anime|drama",
                    'fields':      fields}
 
-        request = makeAPIRequest('queue', options)
+        request = makeAPIRequest(args, 'queue', options)
 
         log("CR: Queue: request['error'] = " + str(request['error']))
         if request['error'] is False:
@@ -835,7 +834,7 @@ def Queue(args):
         options = {'media_types': "anime|drama",
                    'fields':      fields}
 
-        request = makeAPIRequest('queue', options)
+        request = makeAPIRequest(args, 'queue', options)
 
         log("CR: Queue: request['error'] = " + str(request['error']))
         if request['error'] is False:
@@ -891,13 +890,13 @@ def Queue(args):
             crm.endofdirectory('none')
 
 
-def get_queued():
+def get_queued(args):
     """Get list of queued series.
 
     """
     options = {'fields': "series.series_id"}
 
-    request = makeAPIRequest('queue', options)
+    request = makeAPIRequest(args, 'queue', options)
 
     return [col['series']['series_id']
                 for col in request['data']]
@@ -912,7 +911,7 @@ def add_to_queue(args):
         options = {'media_id': args.id,
                    'fields':   "series.series_id"}
 
-        request = makeAPIRequest('info', options)
+        request = makeAPIRequest(args, 'info', options)
 
         series_id = request['data']['series_id']
     else:
@@ -922,7 +921,7 @@ def add_to_queue(args):
     options = {'series_id': series_id,
                'fields':    "series.series_id"}
 
-    request = makeAPIRequest('queue', options)
+    request = makeAPIRequest(args, 'queue', options)
 
     for col in request['data']:
         if series_id == col['series']['series_id']:
@@ -930,7 +929,7 @@ def add_to_queue(args):
 
     options = {'series_id': series_id}
 
-    request = makeAPIRequest('add_to_queue', options)
+    request = makeAPIRequest(args, 'add_to_queue', options)
 
     log("CR: add_to_queue: request['error'] = " + str(request['error']))
 
@@ -944,7 +943,7 @@ def remove_from_queue(args):
         options = {'media_id': args.id,
                    'fields':   "series.series_id"}
 
-        request = makeAPIRequest('info', options)
+        request = makeAPIRequest(args, 'info', options)
 
         series_id = request['data']['series_id']
     else:
@@ -954,13 +953,13 @@ def remove_from_queue(args):
     options = {'series_id': series_id,
                'fields':    "series.series_id"}
 
-    request = makeAPIRequest('queue', options)
+    request = makeAPIRequest(args, 'queue', options)
 
     for col in request['data']:
         if series_id == col['series']['series_id']:
             options = {'series_id': series_id}
 
-            request = makeAPIRequest('remove_from_queue', options)
+            request = makeAPIRequest(args, 'remove_from_queue', options)
 
             log("CR: remove_from_queue: request['error'] = "
                 + str(request['error']))
@@ -986,7 +985,7 @@ def startPlayback(args):
     values = {'media_id': args.id,
               'fields':   fields}
 
-    request = makeAPIRequest('info', values)
+    request = makeAPIRequest(args, 'info', values)
 
     if request['error']:
         log("CR: startPlayback: Connection failed, aborting..")
@@ -1064,7 +1063,7 @@ def startPlayback(args):
                               'media_id':   args.id,
                               'playhead':   timeplayed}
 
-                    request = makeAPIRequest('log', values)
+                    request = makeAPIRequest(args, 'log', values)
 
                     # Use video timeline here
                     xbmc.sleep(5000)
@@ -1096,24 +1095,24 @@ def pretty(d, indent=1):
                 log(' ' * 2 * (indent + 1) + value, xbmc.LOGDEBUG)
 
 
-def makeAPIRequest(method, options):
-    if user_data['premium_type'] in 'anime|drama|manga|UNKNOWN':
+def makeAPIRequest(args, method, options):
+    if args.user_data['premium_type'] in 'anime|drama|manga|UNKNOWN':
         log("CR: makeAPIRequest: get JSON")
 
-        values = {'version': user_data['API_VERSION'],
-                  'locale':  user_data['API_LOCALE']}
+        values = {'version': args.user_data['API_VERSION'],
+                  'locale':  args.user_data['API_LOCALE']}
 
         if method != 'start_session':
-            values['session_id'] = user_data['session_id']
+            values['session_id'] = args.user_data['session_id']
 
         values.update(options)
         options = urllib.urlencode(values)
 
         opener = urllib2.build_opener()
-        opener.addheaders = user_data['API_HEADERS']
+        opener.addheaders = args.user_data['API_HEADERS']
         urllib2.install_opener(opener)
 
-        url = user_data['API_URL'] + "/" + method + ".0.json"
+        url = args.user_data['API_URL'] + "/" + method + ".0.json"
 
         log("CR: makeAPIRequest: url = %s" % url)
         log("CR: makeAPIRequest: options = %s" % options)
@@ -1154,7 +1153,7 @@ def makeAPIRequest(method, options):
         pretty(request)
 
     else:
-        pt = user_data['premium_type']
+        pt = args.user_data['premium_type']
         s  = "Premium type check failed, premium_type:"
 
         request = {'code':    'error',
@@ -1178,8 +1177,8 @@ def changeLocale(args):
 
     ua = 'Mozilla/5.0 (X11; Linux i686; rv:5.0) Gecko/20100101 Firefox/5.0'
 
-    if (user_data['username'] != '' and
-        user_data['password'] != ''):
+    if (args.user_data['username'] != '' and
+        args.user_data['password'] != ''):
 
         log("CR: Attempting to log-in with your user account...")
         xbmc.executebuiltin('Notification(' + notice + ','
@@ -1189,8 +1188,8 @@ def changeLocale(args):
         data = urllib.urlencode({'formname': 'RpcApiUser_Login',
                                  'next_url': '',
                                  'fail_url': '/login',
-                                 'name':     user_data['username'],
-                                 'password': user_data['password']})
+                                 'name':     args.user_data['username'],
+                                 'password': args.user_data['password']})
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
         opener.addheaders = [('Referer',    'https://www.crunchyroll.com'),
                              ('User-Agent', ua)]
@@ -1205,7 +1204,7 @@ def changeLocale(args):
 
     url  = 'https://www.crunchyroll.com/?a=formhandler'
     data = urllib.urlencode({'next_url': '',
-                             'language': user_data['API_LOCALE'],
+                             'language': args.user_data['API_LOCALE'],
                              'formname': 'RpcApiUser_UpdateDefaultSoftSubLanguage'})
     opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
     opener.addheaders = [('Referer',    'https://www.crunchyroll.com/acct/?action=video'),
@@ -1219,7 +1218,7 @@ def changeLocale(args):
     req = opener.open(url, data)
     req.close()
 
-    log('CR: Now using ' + user_data['API_LOCALE'])
+    log('CR: Now using ' + args.user_data['API_LOCALE'])
     xbmc.executebuiltin('Notification(' + notice + ','
                         + notice_done + ',5000,' + icon + ')')
     log("CR: Disabling the force change language setting")
@@ -1227,14 +1226,14 @@ def changeLocale(args):
     args._addon.setSetting(id="change_language", value="0")
 
 
-def usage_reporting():
+def usage_reporting(args):
     log("CR: Attempting to report usage")
 
     url  = ''.join(['https://docs.google.com/forms/d',
                     '/1_qB4UznRfx69JrGCYmKbbeQcFc_t2-9fuNvXGGvl8mk',
                     '/formResponse'])
-    data = urllib.urlencode({'entry_1580743010': user_data['device_id'],
-                             'entry_623948459':  user_data['premium_type'],
+    data = urllib.urlencode({'entry_1580743010': args.user_data['device_id'],
+                             'entry_623948459':  args.user_data['premium_type'],
                              'entry_1130326797': __version__,
                              'entry.590894822':  __XBMCBUILD__})
 
@@ -1250,7 +1249,10 @@ def usage_reporting():
 
 def log(msg,
         level=xbmc.LOGNOTICE,
-        rex=re.compile(r'((?<=password=)[^&]*|(?<=account=)[^&]*)')):
+        rex=re.compile(r"((?<=password=)[^&]*"
+                       r"|(?<=account=)[^&]*"
+                       r"|(?<='password':\s')[^']*"
+                       r"|(?<='username':\s')[^']*)")):
     """XBMC log with matched regex blanked out.
 
     By default blank out user account name and password.
