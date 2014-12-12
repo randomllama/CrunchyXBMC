@@ -307,11 +307,11 @@ def check_mode(args):
 
     """
     mode = args.mode
-    log("CR: Main: argv[0] = %s" % sys.argv[0])
-    log("CR: Main: argv[1] = %s" % sys.argv[1])
-    log("CR: Main: argv[2] = %s" % sys.argv[2])
-    log("CR: Main: args = %s" % str(args.__dict__))
-    log("CR: Main: mode = %s" % mode)
+    log("CR: Main: argv[0] = %s" % sys.argv[0],     xbmc.LOGDEBUG)
+    log("CR: Main: argv[1] = %s" % sys.argv[1],     xbmc.LOGDEBUG)
+    log("CR: Main: argv[2] = %s" % sys.argv[2],     xbmc.LOGDEBUG)
+    log("CR: Main: args = %s" % str(args.__dict__), xbmc.LOGDEBUG)
+    log("CR: Main: mode = %s" % mode,               xbmc.LOGDEBUG)
 
     if mode is None:
         show_main(args)
