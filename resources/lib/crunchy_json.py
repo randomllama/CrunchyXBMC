@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    CrunchyRoll;xbmc
+    Crunchyroll
     Copyright (C) 2012 - 2014 Matthew Beacher
     This program is free software; you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the
@@ -50,9 +50,10 @@ __XBMCBUILD__ = xbmc.getInfoLabel("System.BuildVersion") + " " + sys.platform
 
 
 def load_shelf(args):
-    notice_msg     = args._lang(30200)
-    setup_msg      = args._lang(30203)
-    acc_type_error = args._lang(30312)
+    """Load persistent user data and start Crunchyroll session.
+
+    """
+    notice_msg = args._lang(30200)
 
     change_language = args._addon.getSetting("change_language")
 
@@ -143,100 +144,13 @@ def load_shelf(args):
         ('auth_expires' not in userData) or
         current_datetime > userData['auth_expires']):
 
-        # Start new session
-        log("CR: Starting new session")
-
-        options = {'device_id':    userData['device_id'],
-                   'device_type':  userData['API_DEVICE_TYPE'],
-                   'access_token': userData['API_ACCESS_TOKEN']}
-
-        request = makeAPIRequest(args, 'start_session', options)
-
-        if request['error'] is False:
-            userData['session_id']      = request['data']['session_id']
-            userData['session_expires'] = (current_datetime +
-                                           durel.relativedelta(hours = +4))
-            userData['test_session']    = current_datetime
-
-            log("CR: New session created!"
-                + " Session ID: " + str(userData['session_id']))
-
-        elif request['error'] is True:
-            log("CR: Error starting new session. Error message: "
-                + str(request['message']), xbmc.LOGERROR)
-
+        if not _start_session(args,
+                              userData,
+                              notice_msg,
+                              current_datetime):
             return False
-
-        # Login the session we just started
-        if not userData['username'] or not userData['password']:
-            log("CR: No username or password set")
-
-            args.user_data = userData
-            userData.close()
-
-            ex = 'XBMC.Notification("' + notice_msg + ':","' \
-                 + setup_msg + '.", 3000)'
-            xbmc.executebuiltin(ex)
-            log("CR: No Crunchyroll account found!", xbmc.LOGERROR)
-
-            return False
-
         else:
-            log("CR: Login in the new session")
-
-            options = {'password':   userData['password'],
-                       'account':    userData['username']}
-
-            request = makeAPIRequest(args, 'login', options)
-
-            if request['error'] is False:
-                userData['auth_token']   = request['data']['auth']
-                userData['auth_expires'] = dateutil.parser.parse(request['data']['expires'])
-                userData['premium_type'] = ('free'
-                                                if request['data']['user']['premium'] == ''
-                                                else request['data']['user']['premium'])
-
-                log("CR: Login successful")
-
-            elif request['error'] is True:
-                log("CR: Error logging in new session. Error message: "
-                    + str(request['message']), xbmc.LOGERROR)
-
-                args.user_data = userData
-                userData.close()
-
-                return False
-
-        # Call for usage reporting
-        if current_datetime > userData['lastreported']:
-            userData['lastreported'] = (current_datetime +
-                                        durel.relativedelta(hours = +24))
-            args.user_data = userData
-            usage_reporting(args)
-
-        # Verify user is premium
-        if userData['premium_type'] in 'anime|drama|manga':
-            log("CR: User is a premium " + str(userData['premium_type'])
-                + " member")
-
-            args.user_data = userData
-
             return True
-
-        else:
-            log("CR: User is not a premium member")
-            xbmc.executebuiltin('Notification(' + notice_msg + ',' +
-                                acc_type_error + ',5000)')
-
-            args.user_data = userData = None
-            userData.close()
-
-            crm.add_item(args,
-                         {'title': acc_type_error,
-                          'mode':  'fail'})
-            crm.endofdirectory('none')
-
-            return False
 
     # Check to see if a valid session and auth token exist and if so
     # reinitialize a new session using the auth token
@@ -245,77 +159,13 @@ def load_shelf(args):
           current_datetime < userData['auth_expires'] and
           current_datetime > userData['session_expires']):
 
-        # Re-start new session
-        log("CR: Valid auth token was detected. Restarting session.")
-
-        options = {'device_id':    userData["device_id"],
-                   'device_type':  userData['API_DEVICE_TYPE'],
-                   'access_token': userData['API_ACCESS_TOKEN'],
-                   'auth':         userData['auth_token']}
-
-        request = makeAPIRequest(args, 'start_session', options)
-
-        if request['error'] is False:
-            userData['session_id']      = request['data']['session_id']
-            userData['auth_expires']    = dateutil.parser.parse(request['data']['expires'])
-            userData['premium_type']    = ('free'
-                                               if request['data']['user']['premium'] == ''
-                                               else request['data']['user']['premium'])
-            userData['auth_token']      = request['data']['auth']
-            # 4 hours is a guess. Might be +/- 4.
-            userData['session_expires'] = (current_datetime +
-                                           durel.relativedelta(hours = +4))
-            userData['test_session']    = current_datetime
-
-            log("CR: Session restart successful. Session ID: "
-                + str(userData['session_id']))
-
-            # Call for usage reporting
-            if current_datetime > userData['lastreported']:
-                userData['lastreported'] = (current_datetime +
-                                            durel.relativedelta(hours = +24))
-                args.user_data = userData
-                usage_reporting(args)
-
-            # Verify user is premium
-            if userData['premium_type'] in 'anime|drama|manga':
-                log("CR: User is a premium "
-                    + str(userData['premium_type']) + " member")
-
-                args.user_data = userData
-
-                return True
-
-            else:
-                log("CR: User is not a premium member")
-                xbmc.executebuiltin('Notification(' + notice_msg + ','
-                                    + acc_type_error + ',5000)')
-
-                args.user_data = userData = None
-                userData.close()
-
-                crm.add_item(args,
-                             {'title': acc_type_error,
-                              'mode':  'fail'})
-                crm.endofdirectory('none')
-
-                return False
-
-        elif request['error'] is True:
-            # Remove userData so a new session is started next time
-            del userData['session_id']
-            del userData['auth_expires']
-            del userData['premium_type']
-            del userData['auth_token']
-            del userData['session_expires']
-
-            log("CR: Error restarting session. Error message: "
-                + str(request['message']), xbmc.LOGERROR)
-
-            args.user_data = userData
-            userData.Save()
-
+        if not _restart_session(args,
+                                userData,
+                                notice_msg,
+                                current_datetime):
             return False
+        else:
+            return True
 
     # If we got to this point that means a session exists and it's still
     # valid, we don't need to do anything
@@ -323,86 +173,16 @@ def load_shelf(args):
           current_datetime < userData['session_expires']):
 
         # This section below is stupid slow
-        #return True
         if (userData['test_session'] is None or
             current_datetime > userData['test_session']):
 
-            # Test once every 10 min
-            userData['test_session'] = (current_datetime +
-                                        durel.relativedelta(minutes = +10))
-
-            # Test to make sure the session still works
-            # (sometimes sessions just stop working)
-            fields  = "".join(["media.episode_number,",
-                               "media.name,",
-                               "media.description,",
-                               "media.media_type,",
-                               "media.series_name,",
-                               "media.available,",
-                               "media.available_time,",
-                               "media.free_available,",
-                               "media.free_available_time,",
-                               "media.duration,",
-                               "media.url,",
-                               "media.screenshot_image,",
-                               "image.fwide_url,",
-                               "image.fwidestar_url,",
-                               "series.landscape_image,",
-                               "image.full_url"])
-            options = {'media_types': "anime|drama",
-                       'fields':      fields}
-
-            request = makeAPIRequest(args, 'queue', options)
-
-            if request['error'] is False:
-                log("CR: A valid session was detected."
-                    + " Using existing session ID: "
-                    + str(userData['session_id']))
-
-                # Call for usage reporting
-                if current_datetime > userData['lastreported']:
-                    userData['lastreported'] = (current_datetime +
-                                                durel.relativedelta(hours = +24))
-                    args.user_data = userData
-                    usage_reporting(args)
-
-                # Verify user is premium
-                if userData['premium_type'] in 'anime|drama|manga':
-                    log("CR: User is a premium "
-                        + str(userData['premium_type']) + " member")
-
-                    args.user_data = userData
-
-                    return True
-
-                else:
-                    log("CR: User is not a premium member")
-                    xbmc.executebuiltin('Notification(' + notice_msg + ','
-                                        + acc_type_error + ',5000)')
-
-                    args.user_data = userData = None
-                    userData.close()
-
-                    crm.add_item(args,
-                                 {'title': acc_type_error,
-                                  'mode':  'fail'})
-                    crm.endofdirectory('none')
-
-                    return False
-
-            elif request['error'] is True:
-                log("CR: Something in the login process went wrong!")
-
-                del userData['session_id']
-                del userData['auth_expires']
-                del userData['premium_type']
-                del userData['auth_token']
-                del userData['session_expires']
-
-                args.user_data = userData
-                userData.close()
-
+            if not _test_session(args,
+                                 userData,
+                                 notice_msg,
+                                 current_datetime):
                 return False
+            else:
+                return True
 
     # This is here as a catch all in case something gets messed up along
     # the way. Remove userData variables so we start a new session
@@ -422,7 +202,256 @@ def load_shelf(args):
         return False
 
 
+def _start_session(args,
+                   userData,
+                   notice_msg,
+                   current_datetime):
+    """Start new session.
+
+    """
+    setup_msg = args._lang(30203)
+
+    # Start new session
+    log("CR: Starting new session")
+
+    options = {'device_id':    userData['device_id'],
+               'device_type':  userData['API_DEVICE_TYPE'],
+               'access_token': userData['API_ACCESS_TOKEN']}
+
+    request = makeAPIRequest(args, 'start_session', options)
+
+    if request['error'] is False:
+        userData['session_id']      = request['data']['session_id']
+        userData['session_expires'] = (current_datetime +
+                                       durel.relativedelta(hours = +4))
+        userData['test_session']    = current_datetime
+
+        log("CR: New session created!"
+            + " Session ID: " + str(userData['session_id']))
+
+    elif request['error'] is True:
+        log("CR: Error starting new session. Error message: "
+            + str(request['message']), xbmc.LOGERROR)
+
+        return False
+
+    # Login the session we just started
+    if not userData['username'] or not userData['password']:
+        log("CR: No username or password set")
+
+        args.user_data = userData
+        userData.close()
+
+        ex = 'XBMC.Notification("' + notice_msg + ':","' \
+             + setup_msg + '.", 3000)'
+        xbmc.executebuiltin(ex)
+        log("CR: No Crunchyroll account found!", xbmc.LOGERROR)
+
+        return False
+
+    else:
+        log("CR: Login in the new session")
+
+        options = {'password':   userData['password'],
+                   'account':    userData['username']}
+
+        request = makeAPIRequest(args, 'login', options)
+
+        if request['error'] is False:
+            userData['auth_token']   = request['data']['auth']
+            userData['auth_expires'] = dateutil.parser.parse(request['data']['expires'])
+            userData['premium_type'] = ('free'
+                                            if request['data']['user']['premium'] == ''
+                                            else request['data']['user']['premium'])
+
+            log("CR: Login successful")
+
+        elif request['error'] is True:
+            log("CR: Error logging in new session. Error message: "
+                + str(request['message']), xbmc.LOGERROR)
+
+            args.user_data = userData
+            userData.close()
+
+            return False
+
+    if not _post_login(args,
+                       userData,
+                       notice_msg,
+                       current_datetime):
+        return False
+    else:
+        return True
+
+
+def _restart_session(args,
+                     userData,
+                     notice_msg,
+                     current_datetime):
+    """Restart the session.
+
+    """
+    # Re-start new session
+    log("CR: Valid auth token was detected. Restarting session.")
+
+    options = {'device_id':    userData["device_id"],
+               'device_type':  userData['API_DEVICE_TYPE'],
+               'access_token': userData['API_ACCESS_TOKEN'],
+               'auth':         userData['auth_token']}
+
+    request = makeAPIRequest(args, 'start_session', options)
+
+    if request['error'] is False:
+        userData['session_id']      = request['data']['session_id']
+        userData['auth_expires']    = dateutil.parser.parse(request['data']['expires'])
+        userData['premium_type']    = ('free'
+                                           if request['data']['user']['premium'] == ''
+                                           else request['data']['user']['premium'])
+        userData['auth_token']      = request['data']['auth']
+        # 4 hours is a guess. Might be +/- 4.
+        userData['session_expires'] = (current_datetime +
+                                       durel.relativedelta(hours = +4))
+        userData['test_session']    = current_datetime
+
+        log("CR: Session restart successful. Session ID: "
+            + str(userData['session_id']))
+
+        if not _post_login(args,
+                           userData,
+                           notice_msg,
+                           current_datetime):
+            return False
+        else:
+            return True
+
+    elif request['error'] is True:
+        # Remove userData so a new session is started next time
+        del userData['session_id']
+        del userData['auth_expires']
+        del userData['premium_type']
+        del userData['auth_token']
+        del userData['session_expires']
+
+        log("CR: Error restarting session. Error message: "
+            + str(request['message']), xbmc.LOGERROR)
+
+        args.user_data = userData
+        userData.Save()
+
+        return False
+
+
+def _test_session(args,
+                  userData,
+                  notice_msg,
+                  current_datetime):
+    """Check current session.
+
+    """
+    # Test once every 10 min
+    userData['test_session'] = (current_datetime +
+                                durel.relativedelta(minutes = +10))
+
+    # Test to make sure the session still works
+    # (sometimes sessions just stop working)
+    fields  = "".join(["media.episode_number,",
+                       "media.name,",
+                       "media.description,",
+                       "media.media_type,",
+                       "media.series_name,",
+                       "media.available,",
+                       "media.available_time,",
+                       "media.free_available,",
+                       "media.free_available_time,",
+                       "media.duration,",
+                       "media.url,",
+                       "media.screenshot_image,",
+                       "image.fwide_url,",
+                       "image.fwidestar_url,",
+                       "series.landscape_image,",
+                       "image.full_url"])
+    options = {'media_types': "anime|drama",
+               'fields':      fields}
+
+    request = makeAPIRequest(args, 'queue', options)
+
+    if request['error'] is False:
+        log("CR: A valid session was detected."
+            + " Using existing session ID: "
+            + str(userData['session_id']))
+
+        if not _post_login(args,
+                           userData,
+                           notice_msg,
+                           current_datetime):
+            return False
+        else:
+            return True
+
+    elif request['error'] is True:
+        log("CR: Something in the login process went wrong!")
+
+        del userData['session_id']
+        del userData['auth_expires']
+        del userData['premium_type']
+        del userData['auth_token']
+        del userData['session_expires']
+
+        args.user_data = userData
+        userData.close()
+
+        return False
+
+
+def _post_login(args,
+                userData,
+                notice_msg,
+                current_datetime):
+    """Check premium type and report usage.
+
+    """
+    acc_type_error = args._lang(30312)
+
+    # Call for usage reporting
+    if current_datetime > userData['lastreported']:
+        userData['lastreported'] = (current_datetime +
+                                    durel.relativedelta(hours = +24))
+        args.user_data = userData
+        usage_reporting(args)
+
+    # Verify user is premium
+    if userData['premium_type'] in 'anime|drama|manga':
+        log("CR: User is a premium "
+            + str(userData['premium_type']) + " member")
+
+        args.user_data = userData
+
+        # Cache queued series
+        if 'queue' not in args.user_data:
+            args.user_data['queue'] = get_queued(args)
+
+        return True
+
+    else:
+        log("CR: User is not a premium member")
+        xbmc.executebuiltin('Notification(' + notice_msg + ','
+                            + acc_type_error + ',5000)')
+
+        args.user_data = userData = None
+        userData.close()
+
+        crm.add_item(args,
+                     {'title': acc_type_error,
+                      'mode':  'fail'})
+        crm.endofdirectory('none')
+
+        return False
+
+
 def list_series(args):
+    """List series.
+
+    """
     fields  = "".join(["series.name,",
                        "series.description,",
                        "series.series_id,",
@@ -442,8 +471,6 @@ def list_series(args):
                'offset':     int(args.offset)}
 
     request = makeAPIRequest(args, 'list_series', options)
-
-    queue   = get_queued(args)
 
     if request['error'] is False:
         counter = 0
@@ -481,7 +508,7 @@ def list_series(args):
                 'name' in series and
                 series['media_count'] > 0):
 
-                queued = (series['series_id'] in queue)
+                queued = (series['series_id'] in args.user_data['queue'])
 
                 crm.add_item(args,
                              {'title':        series['name'].encode("utf8"),
@@ -508,6 +535,9 @@ def list_series(args):
 
 
 def list_categories(args):
+    """List categories.
+
+    """
     options = {'media_type': args.media_type}
 
     request = makeAPIRequest(args, 'categories', options)
@@ -525,6 +555,9 @@ def list_categories(args):
 
 
 def list_collections(args):
+    """List collections.
+
+    """
     fields  = "".join(["collection.collection_id,",
                        "collection.season,",
                        "collection.name,",
@@ -546,7 +579,7 @@ def list_collections(args):
 
                 return list_media(args)
         else:
-            queued = (args.series_id in get_queued(args))
+            queued = (args.series_id in args.user_data['queue'])
 
             for collection in request['data']:
                 complete = '1' if collection['complete'] else '0'
@@ -569,6 +602,9 @@ def list_collections(args):
 
 
 def list_media(args):
+    """List media.
+
+    """
     sort    = 'asc' if args.complete is '1' else 'desc'
     fields  = "".join(["media.episode_number,",
                        "media.name,",
@@ -607,12 +643,10 @@ def list_media_items(args, request, series_name, season, mode, fanart):
     """List video episodes.
 
     """
-    queue = get_queued(args)
-
     for media in request:
         queued = ((media['series']['series_id']
                        if mode == "history"
-                       else args.series_id) in queue)
+                       else args.series_id) in args.user_data['queue'])
 
         # The following are items to help display Recently Watched
         # and Queue items correctly
@@ -748,6 +782,9 @@ def list_media_items(args, request, series_name, season, mode, fanart):
 
 
 def history(args):
+    """Show history.
+
+    """
     fields  = "".join(["media.episode_number,",
                        "media.name,",
                        "media.description,",
@@ -779,6 +816,9 @@ def history(args):
 
 
 def queue(args):
+    """Show Crunchyroll queue.
+
+    """
     queue_type = args._addon.getSetting("queue_type")
 
     log("CR: Queue: queue type is " + str(queue_type))
@@ -799,6 +839,7 @@ def queue(args):
                            "image.fwide_url,",
                            "image.fwidestar_url,",
                            "series.landscape_image,",
+                           "series.series_id,",
                            "image.full_url"])
         options = {'media_types': "anime|drama",
                    'fields':      fields}
@@ -807,6 +848,12 @@ def queue(args):
 
         log("CR: Queue: request['error'] = " + str(request['error']))
         if request['error'] is False:
+            log("CR: Queue: has %d series" % len(request['data']))
+
+            # Cache series
+            args.user_data['queue'] = [col['series']['series_id']
+                                           for col in request['data']]
+
             return list_media_items(args,
                                     request['data'],
                                     'Queue',
@@ -835,6 +882,11 @@ def queue(args):
         log("CR: Queue: request['error'] = " + str(request['error']))
         if request['error'] is False:
             log("CR: Queue: has %d series" % len(request['data']))
+
+            # Cache series
+            args.user_data['queue'] = [col['series']['series_id']
+                                           for col in request['data']]
+
             for series in request['data']:
                 series = series['series']
                 # Only available for some series
@@ -881,9 +933,9 @@ def queue(args):
                                  queued=True)
 
                     log("CR: Queue: series = '%s' queued"
-                        % series['name'.encode('utf8')])
+                        % series['name'.encode('utf8')], xbmc.LOGDEBUG)
                 else:
-                    log("CR: Queue: series not queued!")
+                    log("CR: Queue: series not queued!", xbmc.LOGDEBUG)
 
             crm.endofdirectory('none')
 
@@ -903,6 +955,7 @@ def get_queued(args):
 def add_to_queue(args):
     """Add selected video series to queue at Crunchyroll.
 
+    Queued series are cached in user_data.
     """
     # Get series_id
     if args.series_id is None:
@@ -916,14 +969,8 @@ def add_to_queue(args):
         series_id = args.series_id
 
     # Add the series to queue at CR if it is not there already
-    options = {'series_id': series_id,
-               'fields':    "series.series_id"}
-
-    request = makeAPIRequest(args, 'queue', options)
-
-    for col in request['data']:
-        if series_id == col['series']['series_id']:
-            return
+    if series_id in args.user_data['queue']:
+        return
 
     options = {'series_id': series_id}
 
@@ -931,10 +978,14 @@ def add_to_queue(args):
 
     log("CR: add_to_queue: request['error'] = " + str(request['error']))
 
+    if not request['error']:
+        args.user_data['queue'].append(series_id)
+
 
 def remove_from_queue(args):
     """Remove selected video series from queue at Crunchyroll.
 
+    Queued series are cached in user_data.
     """
     # Get series_id
     if args.series_id is None:
@@ -948,19 +999,17 @@ def remove_from_queue(args):
         series_id = args.series_id
 
     # Remove the series from queue at CR if it is there
-    options = {'series_id': series_id,
-               'fields':    "series.series_id"}
+    if series_id in args.user_data['queue']:
+        options = {'series_id': series_id}
 
-    request = makeAPIRequest(args, 'queue', options)
+        request = makeAPIRequest(args, 'remove_from_queue', options)
 
-    for col in request['data']:
-        if series_id == col['series']['series_id']:
-            options = {'series_id': series_id}
+        log("CR: remove_from_queue: request['error'] = "
+            + str(request['error']))
 
-            request = makeAPIRequest(args, 'remove_from_queue', options)
-
-            log("CR: remove_from_queue: request['error'] = "
-                + str(request['error']))
+        if not request['error']:
+            args.user_data['queue'] = [i for i in args.user_data['queue']
+                                             if i != series_id]
 
     # Refresh directory listing
     xbmc.executebuiltin('XBMC.Container.Refresh')
@@ -1094,6 +1143,9 @@ def pretty(d, indent=1):
 
 
 def makeAPIRequest(args, method, options):
+    """Make Crunchyroll JSON API call.
+
+    """
     if args.user_data['premium_type'] in 'anime|drama|manga|UNKNOWN':
         log("CR: makeAPIRequest: get JSON")
 
@@ -1164,6 +1216,9 @@ def makeAPIRequest(args, method, options):
 
 
 def change_locale(args):
+    """Change locale.
+
+    """
     cj           = cookielib.LWPCookieJar()
 
     notice      = args._lang(30200)
@@ -1225,6 +1280,14 @@ def change_locale(args):
 
 
 def usage_reporting(args):
+    """Report addon usage to the author.
+
+    Following information is collected:
+    - Randomly generated device ID
+    - Premium type
+    - Addon version
+    - XBMC version
+    """
     log("CR: Attempting to report usage")
 
     url  = ''.join(['https://docs.google.com/forms/d',

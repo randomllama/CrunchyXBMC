@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    CrunchyRoll;xbmc
+    Crunchyroll
     Copyright (C) 2012 - 2014 Matthew Beacher
     This program is free software; you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the
@@ -31,7 +31,12 @@ from crunchy_json import log
 
 
 class Args(object):
+    """Arguments class.
 
+    Hold all arguments passed to the script and also persistent user data and
+    reference to the addon. It is intended to hold all data necessary for the
+    script.
+    """
     def __init__(self, *args, **kwargs):
         """Initialize arguments object.
 
