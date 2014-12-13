@@ -50,6 +50,9 @@ __XBMCBUILD__ = xbmc.getInfoLabel("System.BuildVersion") + " " + sys.platform
 
 
 def load_shelf(args):
+    """Load persistent user data and start Crunchyroll session.
+
+    """
     notice_msg = args._lang(30200)
 
     change_language = args._addon.getSetting("change_language")
@@ -446,6 +449,9 @@ def _post_login(args,
 
 
 def list_series(args):
+    """List series.
+
+    """
     fields  = "".join(["series.name,",
                        "series.description,",
                        "series.series_id,",
@@ -529,6 +535,9 @@ def list_series(args):
 
 
 def list_categories(args):
+    """List categories.
+
+    """
     options = {'media_type': args.media_type}
 
     request = makeAPIRequest(args, 'categories', options)
@@ -546,6 +555,9 @@ def list_categories(args):
 
 
 def list_collections(args):
+    """List collections.
+
+    """
     fields  = "".join(["collection.collection_id,",
                        "collection.season,",
                        "collection.name,",
@@ -590,6 +602,9 @@ def list_collections(args):
 
 
 def list_media(args):
+    """List media.
+
+    """
     sort    = 'asc' if args.complete is '1' else 'desc'
     fields  = "".join(["media.episode_number,",
                        "media.name,",
@@ -767,6 +782,9 @@ def list_media_items(args, request, series_name, season, mode, fanart):
 
 
 def history(args):
+    """Show history.
+
+    """
     fields  = "".join(["media.episode_number,",
                        "media.name,",
                        "media.description,",
@@ -798,6 +816,9 @@ def history(args):
 
 
 def queue(args):
+    """Show Crunchyroll queue.
+
+    """
     queue_type = args._addon.getSetting("queue_type")
 
     log("CR: Queue: queue type is " + str(queue_type))
@@ -1122,6 +1143,9 @@ def pretty(d, indent=1):
 
 
 def makeAPIRequest(args, method, options):
+    """Make Crunchyroll JSON API call.
+
+    """
     if args.user_data['premium_type'] in 'anime|drama|manga|UNKNOWN':
         log("CR: makeAPIRequest: get JSON")
 
@@ -1192,6 +1216,9 @@ def makeAPIRequest(args, method, options):
 
 
 def change_locale(args):
+    """Change locale.
+
+    """
     cj           = cookielib.LWPCookieJar()
 
     notice      = args._lang(30200)
@@ -1253,6 +1280,14 @@ def change_locale(args):
 
 
 def usage_reporting(args):
+    """Report addon usage to the author.
+
+    Following information is collected:
+    - Randomly generated device ID
+    - Premium type
+    - Addon version
+    - XBMC version
+    """
     log("CR: Attempting to report usage")
 
     url  = ''.join(['https://docs.google.com/forms/d',
