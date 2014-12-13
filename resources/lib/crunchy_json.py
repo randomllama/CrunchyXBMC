@@ -423,6 +423,10 @@ def _post_login(args,
 
         args.user_data = userData
 
+        # Cache queued series
+        if 'queue' not in args.user_data:
+            args.user_data['queue'] = get_queued(args)
+
         return True
 
     else:
@@ -462,8 +466,6 @@ def list_series(args):
 
     request = makeAPIRequest(args, 'list_series', options)
 
-    queue   = get_queued(args)
-
     if request['error'] is False:
         counter = 0
         for series in request['data']:
@@ -500,7 +502,7 @@ def list_series(args):
                 'name' in series and
                 series['media_count'] > 0):
 
-                queued = (series['series_id'] in queue)
+                queued = (series['series_id'] in args.user_data['queue'])
 
                 crm.add_item(args,
                              {'title':        series['name'].encode("utf8"),
@@ -565,7 +567,7 @@ def list_collections(args):
 
                 return list_media(args)
         else:
-            queued = (args.series_id in get_queued(args))
+            queued = (args.series_id in args.user_data['queue'])
 
             for collection in request['data']:
                 complete = '1' if collection['complete'] else '0'
@@ -626,12 +628,10 @@ def list_media_items(args, request, series_name, season, mode, fanart):
     """List video episodes.
 
     """
-    queue = get_queued(args)
-
     for media in request:
         queued = ((media['series']['series_id']
                        if mode == "history"
-                       else args.series_id) in queue)
+                       else args.series_id) in args.user_data['queue'])
 
         # The following are items to help display Recently Watched
         # and Queue items correctly
@@ -818,6 +818,7 @@ def queue(args):
                            "image.fwide_url,",
                            "image.fwidestar_url,",
                            "series.landscape_image,",
+                           "series.series_id,",
                            "image.full_url"])
         options = {'media_types': "anime|drama",
                    'fields':      fields}
@@ -826,6 +827,12 @@ def queue(args):
 
         log("CR: Queue: request['error'] = " + str(request['error']))
         if request['error'] is False:
+            log("CR: Queue: has %d series" % len(request['data']))
+
+            # Cache series
+            args.user_data['queue'] = [col['series']['series_id']
+                                           for col in request['data']]
+
             return list_media_items(args,
                                     request['data'],
                                     'Queue',
@@ -854,6 +861,11 @@ def queue(args):
         log("CR: Queue: request['error'] = " + str(request['error']))
         if request['error'] is False:
             log("CR: Queue: has %d series" % len(request['data']))
+
+            # Cache series
+            args.user_data['queue'] = [col['series']['series_id']
+                                           for col in request['data']]
+
             for series in request['data']:
                 series = series['series']
                 # Only available for some series
@@ -900,9 +912,9 @@ def queue(args):
                                  queued=True)
 
                     log("CR: Queue: series = '%s' queued"
-                        % series['name'.encode('utf8')])
+                        % series['name'.encode('utf8')], xbmc.LOGDEBUG)
                 else:
-                    log("CR: Queue: series not queued!")
+                    log("CR: Queue: series not queued!", xbmc.LOGDEBUG)
 
             crm.endofdirectory('none')
 
@@ -922,6 +934,7 @@ def get_queued(args):
 def add_to_queue(args):
     """Add selected video series to queue at Crunchyroll.
 
+    Queued series are cached in user_data.
     """
     # Get series_id
     if args.series_id is None:
@@ -935,14 +948,8 @@ def add_to_queue(args):
         series_id = args.series_id
 
     # Add the series to queue at CR if it is not there already
-    options = {'series_id': series_id,
-               'fields':    "series.series_id"}
-
-    request = makeAPIRequest(args, 'queue', options)
-
-    for col in request['data']:
-        if series_id == col['series']['series_id']:
-            return
+    if series_id in args.user_data['queue']:
+        return
 
     options = {'series_id': series_id}
 
@@ -950,10 +957,14 @@ def add_to_queue(args):
 
     log("CR: add_to_queue: request['error'] = " + str(request['error']))
 
+    if not request['error']:
+        args.user_data['queue'].append(series_id)
+
 
 def remove_from_queue(args):
     """Remove selected video series from queue at Crunchyroll.
 
+    Queued series are cached in user_data.
     """
     # Get series_id
     if args.series_id is None:
@@ -967,19 +978,17 @@ def remove_from_queue(args):
         series_id = args.series_id
 
     # Remove the series from queue at CR if it is there
-    options = {'series_id': series_id,
-               'fields':    "series.series_id"}
+    if series_id in args.user_data['queue']:
+        options = {'series_id': series_id}
 
-    request = makeAPIRequest(args, 'queue', options)
+        request = makeAPIRequest(args, 'remove_from_queue', options)
 
-    for col in request['data']:
-        if series_id == col['series']['series_id']:
-            options = {'series_id': series_id}
+        log("CR: remove_from_queue: request['error'] = "
+            + str(request['error']))
 
-            request = makeAPIRequest(args, 'remove_from_queue', options)
-
-            log("CR: remove_from_queue: request['error'] = "
-                + str(request['error']))
+        if not request['error']:
+            args.user_data['queue'] = [i for i in args.user_data['queue']
+                                             if i != series_id]
 
     # Refresh directory listing
     xbmc.executebuiltin('XBMC.Container.Refresh')
