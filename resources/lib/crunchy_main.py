@@ -360,5 +360,5 @@ def main():
 
         check_mode(args)
 
-        # Close shelf
-        args.user_data.close()
+    # Close shelf
+    args.user_data.close()

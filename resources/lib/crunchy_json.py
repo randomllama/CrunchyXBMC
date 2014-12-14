@@ -132,7 +132,6 @@ def load_shelf(args):
                                        durel.relativedelta(hours = +24))
 
         args.user_data = userData
-        userData.close()
 
         log("CR: Unable to load shelve")
 
@@ -196,9 +195,6 @@ def load_shelf(args):
 
         log("CR: Something in the login process went wrong!")
 
-        args.user_data = userData
-        userData.close()
-
         return False
 
 
@@ -239,9 +235,6 @@ def _start_session(args,
     if not userData['username'] or not userData['password']:
         log("CR: No username or password set")
 
-        args.user_data = userData
-        userData.close()
-
         ex = 'XBMC.Notification("' + notice_msg + ':","' \
              + setup_msg + '.", 3000)'
         xbmc.executebuiltin(ex)
@@ -269,9 +262,6 @@ def _start_session(args,
         elif request['error'] is True:
             log("CR: Error logging in new session. Error message: "
                 + str(request['message']), xbmc.LOGERROR)
-
-            args.user_data = userData
-            userData.close()
 
             return False
 
@@ -335,9 +325,6 @@ def _restart_session(args,
         log("CR: Error restarting session. Error message: "
             + str(request['message']), xbmc.LOGERROR)
 
-        args.user_data = userData
-        userData.Save()
-
         return False
 
 
@@ -397,9 +384,6 @@ def _test_session(args,
         del userData['auth_token']
         del userData['session_expires']
 
-        args.user_data = userData
-        userData.close()
-
         return False
 
 
@@ -416,15 +400,12 @@ def _post_login(args,
     if current_datetime > userData['lastreported']:
         userData['lastreported'] = (current_datetime +
                                     durel.relativedelta(hours = +24))
-        args.user_data = userData
         usage_reporting(args)
 
     # Verify user is premium
     if userData['premium_type'] in 'anime|drama|manga':
         log("CR: User is a premium "
             + str(userData['premium_type']) + " member")
-
-        args.user_data = userData
 
         # Cache queued series
         if 'queue' not in args.user_data:
@@ -436,9 +417,6 @@ def _post_login(args,
         log("CR: User is not a premium member")
         xbmc.executebuiltin('Notification(' + notice_msg + ','
                             + acc_type_error + ',5000)')
-
-        args.user_data = userData = None
-        userData.close()
 
         crm.add_item(args,
                      {'title': acc_type_error,
