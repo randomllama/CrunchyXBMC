@@ -132,7 +132,6 @@ def load_shelf(args):
                                        durel.relativedelta(hours = +24))
 
         args.user_data = userData
-        userData.close()
 
         log("CR: Unable to load shelve")
 
@@ -145,7 +144,6 @@ def load_shelf(args):
         current_datetime > userData['auth_expires']):
 
         if not _start_session(args,
-                              userData,
                               notice_msg,
                               current_datetime):
             return False
@@ -160,7 +158,6 @@ def load_shelf(args):
           current_datetime > userData['session_expires']):
 
         if not _restart_session(args,
-                                userData,
                                 notice_msg,
                                 current_datetime):
             return False
@@ -177,7 +174,6 @@ def load_shelf(args):
             current_datetime > userData['test_session']):
 
             if not _test_session(args,
-                                 userData,
                                  notice_msg,
                                  current_datetime):
                 return False
@@ -196,14 +192,10 @@ def load_shelf(args):
 
         log("CR: Something in the login process went wrong!")
 
-        args.user_data = userData
-        userData.close()
-
         return False
 
 
 def _start_session(args,
-                   userData,
                    notice_msg,
                    current_datetime):
     """Start new session.
@@ -214,20 +206,20 @@ def _start_session(args,
     # Start new session
     log("CR: Starting new session")
 
-    options = {'device_id':    userData['device_id'],
-               'device_type':  userData['API_DEVICE_TYPE'],
-               'access_token': userData['API_ACCESS_TOKEN']}
+    options = {'device_id':    args.user_data['device_id'],
+               'device_type':  args.user_data['API_DEVICE_TYPE'],
+               'access_token': args.user_data['API_ACCESS_TOKEN']}
 
     request = makeAPIRequest(args, 'start_session', options)
 
     if request['error'] is False:
-        userData['session_id']      = request['data']['session_id']
-        userData['session_expires'] = (current_datetime +
-                                       durel.relativedelta(hours = +4))
-        userData['test_session']    = current_datetime
+        args.user_data['session_id']      = request['data']['session_id']
+        args.user_data['session_expires'] = (current_datetime +
+                                             durel.relativedelta(hours = +4))
+        args.user_data['test_session']    = current_datetime
 
         log("CR: New session created!"
-            + " Session ID: " + str(userData['session_id']))
+            + " Session ID: " + str(args.user_data['session_id']))
 
     elif request['error'] is True:
         log("CR: Error starting new session. Error message: "
@@ -236,11 +228,8 @@ def _start_session(args,
         return False
 
     # Login the session we just started
-    if not userData['username'] or not userData['password']:
+    if not args.user_data['username'] or not args.user_data['password']:
         log("CR: No username or password set")
-
-        args.user_data = userData
-        userData.close()
 
         ex = 'XBMC.Notification("' + notice_msg + ':","' \
              + setup_msg + '.", 3000)'
@@ -252,17 +241,17 @@ def _start_session(args,
     else:
         log("CR: Login in the new session")
 
-        options = {'password':   userData['password'],
-                   'account':    userData['username']}
+        options = {'password': args.user_data['password'],
+                   'account':  args.user_data['username']}
 
         request = makeAPIRequest(args, 'login', options)
 
         if request['error'] is False:
-            userData['auth_token']   = request['data']['auth']
-            userData['auth_expires'] = dateutil.parser.parse(request['data']['expires'])
-            userData['premium_type'] = ('free'
-                                            if request['data']['user']['premium'] == ''
-                                            else request['data']['user']['premium'])
+            args.user_data['auth_token']   = request['data']['auth']
+            args.user_data['auth_expires'] = dateutil.parser.parse(request['data']['expires'])
+            args.user_data['premium_type'] = ('free'
+                                                  if request['data']['user']['premium'] == ''
+                                                  else request['data']['user']['premium'])
 
             log("CR: Login successful")
 
@@ -270,13 +259,9 @@ def _start_session(args,
             log("CR: Error logging in new session. Error message: "
                 + str(request['message']), xbmc.LOGERROR)
 
-            args.user_data = userData
-            userData.close()
-
             return False
 
     if not _post_login(args,
-                       userData,
                        notice_msg,
                        current_datetime):
         return False
@@ -285,7 +270,6 @@ def _start_session(args,
 
 
 def _restart_session(args,
-                     userData,
                      notice_msg,
                      current_datetime):
     """Restart the session.
@@ -294,30 +278,29 @@ def _restart_session(args,
     # Re-start new session
     log("CR: Valid auth token was detected. Restarting session.")
 
-    options = {'device_id':    userData["device_id"],
-               'device_type':  userData['API_DEVICE_TYPE'],
-               'access_token': userData['API_ACCESS_TOKEN'],
-               'auth':         userData['auth_token']}
+    options = {'device_id':    args.user_data["device_id"],
+               'device_type':  args.user_data['API_DEVICE_TYPE'],
+               'access_token': args.user_data['API_ACCESS_TOKEN'],
+               'auth':         args.user_data['auth_token']}
 
     request = makeAPIRequest(args, 'start_session', options)
 
     if request['error'] is False:
-        userData['session_id']      = request['data']['session_id']
-        userData['auth_expires']    = dateutil.parser.parse(request['data']['expires'])
-        userData['premium_type']    = ('free'
-                                           if request['data']['user']['premium'] == ''
-                                           else request['data']['user']['premium'])
-        userData['auth_token']      = request['data']['auth']
+        args.user_data['session_id']      = request['data']['session_id']
+        args.user_data['auth_expires']    = dateutil.parser.parse(request['data']['expires'])
+        args.user_data['premium_type']    = ('free'
+                                                 if request['data']['user']['premium'] == ''
+                                                 else request['data']['user']['premium'])
+        args.user_data['auth_token']      = request['data']['auth']
         # 4 hours is a guess. Might be +/- 4.
-        userData['session_expires'] = (current_datetime +
-                                       durel.relativedelta(hours = +4))
-        userData['test_session']    = current_datetime
+        args.user_data['session_expires'] = (current_datetime +
+                                             durel.relativedelta(hours = +4))
+        args.user_data['test_session']    = current_datetime
 
         log("CR: Session restart successful. Session ID: "
-            + str(userData['session_id']))
+            + str(args.user_data['session_id']))
 
         if not _post_login(args,
-                           userData,
                            notice_msg,
                            current_datetime):
             return False
@@ -326,31 +309,27 @@ def _restart_session(args,
 
     elif request['error'] is True:
         # Remove userData so a new session is started next time
-        del userData['session_id']
-        del userData['auth_expires']
-        del userData['premium_type']
-        del userData['auth_token']
-        del userData['session_expires']
+        del args.user_data['session_id']
+        del args.user_data['auth_expires']
+        del args.user_data['premium_type']
+        del args.user_data['auth_token']
+        del args.user_data['session_expires']
 
         log("CR: Error restarting session. Error message: "
             + str(request['message']), xbmc.LOGERROR)
-
-        args.user_data = userData
-        userData.Save()
 
         return False
 
 
 def _test_session(args,
-                  userData,
                   notice_msg,
                   current_datetime):
     """Check current session.
 
     """
     # Test once every 10 min
-    userData['test_session'] = (current_datetime +
-                                durel.relativedelta(minutes = +10))
+    args.user_data['test_session'] = (current_datetime +
+                                      durel.relativedelta(minutes = +10))
 
     # Test to make sure the session still works
     # (sometimes sessions just stop working)
@@ -378,10 +357,9 @@ def _test_session(args,
     if request['error'] is False:
         log("CR: A valid session was detected."
             + " Using existing session ID: "
-            + str(userData['session_id']))
+            + str(args.user_data['session_id']))
 
         if not _post_login(args,
-                           userData,
                            notice_msg,
                            current_datetime):
             return False
@@ -391,20 +369,16 @@ def _test_session(args,
     elif request['error'] is True:
         log("CR: Something in the login process went wrong!")
 
-        del userData['session_id']
-        del userData['auth_expires']
-        del userData['premium_type']
-        del userData['auth_token']
-        del userData['session_expires']
-
-        args.user_data = userData
-        userData.close()
+        del args.user_data['session_id']
+        del args.user_data['auth_expires']
+        del args.user_data['premium_type']
+        del args.user_data['auth_token']
+        del args.user_data['session_expires']
 
         return False
 
 
 def _post_login(args,
-                userData,
                 notice_msg,
                 current_datetime):
     """Check premium type and report usage.
@@ -413,18 +387,15 @@ def _post_login(args,
     acc_type_error = args._lang(30312)
 
     # Call for usage reporting
-    if current_datetime > userData['lastreported']:
-        userData['lastreported'] = (current_datetime +
-                                    durel.relativedelta(hours = +24))
-        args.user_data = userData
+    if current_datetime > args.user_data['lastreported']:
+        args.user_data['lastreported'] = (current_datetime +
+                                          durel.relativedelta(hours = +24))
         usage_reporting(args)
 
     # Verify user is premium
-    if userData['premium_type'] in 'anime|drama|manga':
+    if args.user_data['premium_type'] in 'anime|drama|manga':
         log("CR: User is a premium "
-            + str(userData['premium_type']) + " member")
-
-        args.user_data = userData
+            + str(args.user_data['premium_type']) + " member")
 
         # Cache queued series
         if 'queue' not in args.user_data:
@@ -436,9 +407,6 @@ def _post_login(args,
         log("CR: User is not a premium member")
         xbmc.executebuiltin('Notification(' + notice_msg + ','
                             + acc_type_error + ',5000)')
-
-        args.user_data = userData = None
-        userData.close()
 
         crm.add_item(args,
                      {'title': acc_type_error,
