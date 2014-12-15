@@ -69,69 +69,69 @@ def load_shelf(args):
 
     try:
         # Load persistent vars
-        userData = shelve.open(shelf_path, writeback=True)
+        user_data = shelve.open(shelf_path, writeback=True)
 
         if change_language == "0":
-            userData.setdefault('API_LOCALE',"enUS")
+            user_data.setdefault('API_LOCALE',"enUS")
         elif change_language == "1":
-            userData['API_LOCALE']  = "enUS"
+            user_data['API_LOCALE']  = "enUS"
         elif change_language == "2":
-            userData['API_LOCALE']  = "enGB"
+            user_data['API_LOCALE']  = "enGB"
         elif change_language == "3":
-            userData['API_LOCALE']  = "jaJP"
+            user_data['API_LOCALE']  = "jaJP"
         elif change_language == "4":
-            userData['API_LOCALE']  = "frFR"
+            user_data['API_LOCALE']  = "frFR"
         elif change_language == "5":
-            userData['API_LOCALE']  = "deDE"
+            user_data['API_LOCALE']  = "deDE"
         elif change_language == "6":
-            userData['API_LOCALE']  = "ptBR"
+            user_data['API_LOCALE']  = "ptBR"
         elif change_language == "7":
-            userData['API_LOCALE']  = "ptPT"
+            user_data['API_LOCALE']  = "ptPT"
         elif change_language == "8":
-            userData['API_LOCALE']  = "esLA"
+            user_data['API_LOCALE']  = "esLA"
         elif change_language == "9":
-            userData['API_LOCALE']  = "esES"
+            user_data['API_LOCALE']  = "esES"
 
-        userData['username'] = args._addon.getSetting("crunchy_username")
-        userData['password'] = args._addon.getSetting("crunchy_password")
+        user_data['username'] = args._addon.getSetting("crunchy_username")
+        user_data['password'] = args._addon.getSetting("crunchy_password")
 
-        if 'device_id' not in userData:
+        if 'device_id' not in user_data:
             char_set  = string.ascii_letters + string.digits
             device_id = ''.join(random.sample(char_set, 32))
-            userData["device_id"] = device_id
+            user_data["device_id"] = device_id
             log("CR: New device_id created. New device ID: "
                 + str(device_id))
 
-        userData['API_HEADERS'] = [('User-Agent',      "Mozilla/5.0 (PLAYSTATION 3; 4.46)"),
-                                   ('Host',            "api.crunchyroll.com"),
-                                   ('Accept-Encoding', "gzip, deflate"),
-                                   ('Accept',          "*/*"),
-                                   ('Content-Type',    "application/x-www-form-urlencoded")]
+        user_data['API_HEADERS'] = [('User-Agent',      "Mozilla/5.0 (PLAYSTATION 3; 4.46)"),
+                                    ('Host',            "api.crunchyroll.com"),
+                                    ('Accept-Encoding', "gzip, deflate"),
+                                    ('Accept',          "*/*"),
+                                    ('Content-Type',    "application/x-www-form-urlencoded")]
 
-        userData['API_URL']          = "https://api.crunchyroll.com"
-        userData['API_VERSION']      = "1.0.1"
-        userData['API_ACCESS_TOKEN'] = "S7zg3vKx6tRZ0Sf"
-        userData['API_DEVICE_TYPE']  = "com.crunchyroll.ps3"
+        user_data['API_URL']          = "https://api.crunchyroll.com"
+        user_data['API_VERSION']      = "1.0.1"
+        user_data['API_ACCESS_TOKEN'] = "S7zg3vKx6tRZ0Sf"
+        user_data['API_DEVICE_TYPE']  = "com.crunchyroll.ps3"
 
-        userData.setdefault('premium_type', 'UNKNOWN')
-        userData.setdefault('lastreported', (current_datetime -
-                                             durel.relativedelta(hours = +24)))
-        args.user_data = userData
+        user_data.setdefault('premium_type', 'UNKNOWN')
+        user_data.setdefault('lastreported', (current_datetime -
+                                              durel.relativedelta(hours = +24)))
+        args.user_data = user_data
 
     except:
         log("CR: Unexpected error:", sys.exc_info(), xbmc.LOGERROR)
 
-        userData['session_id']      = ''
-        userData['auth_expires']    = (current_datetime -
-                                       durel.relativedelta(hours = +24))
-        userData['lastreported']    = (current_datetime -
-                                       durel.relativedelta(hours = +24))
-        userData['premium_type']    = 'UNKNOWN'
-        userData['auth_token']      = ''
-        userData['session_expires'] = (current_datetime -
-                                       durel.relativedelta(hours = +24))
+        user_data['session_id']      = ''
+        user_data['auth_expires']    = (current_datetime -
+                                        durel.relativedelta(hours = +24))
+        user_data['lastreported']    = (current_datetime -
+                                        durel.relativedelta(hours = +24))
+        user_data['premium_type']    = 'UNKNOWN'
+        user_data['auth_token']      = ''
+        user_data['session_expires'] = (current_datetime -
+                                        durel.relativedelta(hours = +24))
 
-        args.user_data = userData
+        args.user_data = user_data
 
         log("CR: Unable to load shelve")
 
@@ -139,9 +139,9 @@ def load_shelf(args):
 
     # Check to see if a session_id doesn't exist or if the current
     # auth token is invalid and if so start a new session and log it in
-    if (('session_id' not in userData) or
-        ('auth_expires' not in userData) or
-        current_datetime > userData['auth_expires']):
+    if ('session_id' not in user_data or
+        'auth_expires' not in user_data or
+        current_datetime > user_data['auth_expires']):
 
         if not _start_session(args,
                               notice_msg,
@@ -152,10 +152,10 @@ def load_shelf(args):
 
     # Check to see if a valid session and auth token exist and if so
     # reinitialize a new session using the auth token
-    elif ('session_id' in userData and
-          'auth_expires' in userData and
-          current_datetime < userData['auth_expires'] and
-          current_datetime > userData['session_expires']):
+    elif ('session_id' in user_data and
+          'auth_expires' in user_data and
+          current_datetime < user_data['auth_expires'] and
+          current_datetime > user_data['session_expires']):
 
         if not _restart_session(args,
                                 notice_msg,
@@ -166,12 +166,12 @@ def load_shelf(args):
 
     # If we got to this point that means a session exists and it's still
     # valid, we don't need to do anything
-    elif ('session_id' in userData and
-          current_datetime < userData['session_expires']):
+    elif ('session_id' in user_data and
+          current_datetime < user_data['session_expires']):
 
         # This section below is stupid slow
-        if (userData['test_session'] is None or
-            current_datetime > userData['test_session']):
+        if (user_data['test_session'] is None or
+            current_datetime > user_data['test_session']):
 
             if not _test_session(args,
                                  notice_msg,
@@ -181,14 +181,14 @@ def load_shelf(args):
                 return True
 
     # This is here as a catch all in case something gets messed up along
-    # the way. Remove userData variables so we start a new session
+    # the way. Remove user_data variables so we start a new session
     # next time around.
     else:
-        del userData['session_id']
-        del userData['auth_expires']
-        del userData['premium_type']
-        del userData['auth_token']
-        del userData['session_expires']
+        del user_data['session_id']
+        del user_data['auth_expires']
+        del user_data['premium_type']
+        del user_data['auth_token']
+        del user_data['session_expires']
 
         log("CR: Something in the login process went wrong!")
 
@@ -308,7 +308,7 @@ def _restart_session(args,
             return True
 
     elif request['error'] is True:
-        # Remove userData so a new session is started next time
+        # Remove user_data so a new session is started next time
         del args.user_data['session_id']
         del args.user_data['auth_expires']
         del args.user_data['premium_type']
