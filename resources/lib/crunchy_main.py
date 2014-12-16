@@ -194,34 +194,29 @@ def show_main(args):
     """
     change_language = args._addon.getSetting("change_language")
 
-    if crj.load_shelf(args) is False:
-        add_item(args,
-                 {'title': 'Session failed: Check login'})
-        endofdirectory()
-    else:
-        if change_language != "0":
-            crj.change_locale()
+    if change_language != "0":
+        crj.change_locale(args)
 
-        anime   = args._lang(30100)
-        drama   = args._lang(30104)
-        queue   = args._lang(30105)
-        history = args._lang(30111)
+    anime   = args._lang(30100)
+    drama   = args._lang(30104)
+    queue   = args._lang(30105)
+    history = args._lang(30111)
 
-        add_item(args,
-                 {'title':      queue,
-                  'mode':       'queue'})
-        add_item(args,
-                 {'title':      history,
-                  'mode':       'history'})
-        add_item(args,
-                 {'title':      anime,
-                  'mode':       'channels',
-                  'media_type': 'anime'})
-        add_item(args,
-                 {'title':      drama,
-                  'mode':       'channels',
-                  'media_type': 'drama'})
-        endofdirectory()
+    add_item(args,
+             {'title':      queue,
+              'mode':       'queue'})
+    add_item(args,
+             {'title':      history,
+              'mode':       'history'})
+    add_item(args,
+             {'title':      anime,
+              'mode':       'channels',
+              'media_type': 'anime'})
+    add_item(args,
+             {'title':      drama,
+              'mode':       'channels',
+              'media_type': 'drama'})
+    endofdirectory()
 
 
 def channels(args):
