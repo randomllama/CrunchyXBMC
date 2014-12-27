@@ -59,10 +59,6 @@ def load_shelf(args):
 
     base_path = xbmc.translatePath(args._addon.getAddonInfo('profile')).decode('utf-8')
 
-    base_cache_path = os.path.join(base_path, "cache")
-    if not os.path.exists(base_cache_path):
-        os.makedirs(base_cache_path)
-
     shelf_path = os.path.join(base_path, "cruchyXBMC")
 
     current_datetime = datetime.datetime.now(dateutil.tz.tzutc())
