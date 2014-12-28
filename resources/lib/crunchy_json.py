@@ -117,6 +117,14 @@ def load_shelf(args):
     except:
         log("CR: Unexpected error: %s" % (sys.exc_info(),), xbmc.LOGERROR)
 
+        # Get process ownership info
+        log("CR: Effective User:   %d" % (os.geteuid(),), xbmc.LOGERROR)
+        log("CR: Effective Group:  %d" % (os.getegid(),), xbmc.LOGERROR)
+        log("CR: User:             %d" % (os.getuid(),), xbmc.LOGERROR)
+        log("CR: Group:            %d" % (os.getgid(),), xbmc.LOGERROR)
+        log("CR: Groups: %s" % str(os.getgroups()), xbmc.LOGERROR)
+
+        # Reset user_data
         user_data['session_id']      = ''
         user_data['auth_expires']    = (current_datetime -
                                         durel.relativedelta(hours = +24))
