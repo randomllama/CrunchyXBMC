@@ -115,7 +115,7 @@ def load_shelf(args):
         args.user_data = user_data
 
     except:
-        log("CR: Unexpected error:", sys.exc_info(), xbmc.LOGERROR)
+        log("CR: Unexpected error: %s" % (sys.exc_info(),), xbmc.LOGERROR)
 
         user_data['session_id']      = ''
         user_data['auth_expires']    = (current_datetime -
