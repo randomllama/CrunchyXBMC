@@ -9,7 +9,7 @@ Git Repo: https://github.com/Yoshiofthewire/CrunchyXBMC
 
 Legacy Builds: https://github.com/Yoshiofthewire/CrunchyXBMC-Legacy
 
-Forum Posting: http://forum.xbmc.org/showthread.php?tid=129709
+Forum Posting: http://forum.kodi.tv/showthread.php?tid=129709
 
 Disclaimer:
 You MUST be a Crunchyroll Premium Member!
