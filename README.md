@@ -7,7 +7,7 @@ This plugin a an amalgamation of some of my own code and other's patches.
 
 Git Repo: https://github.com/Yoshiofthewire/CrunchyXBMC
 
-Legacy Builds: https://code.google.com/p/urlxl-repo/
+Legacy Builds: https://github.com/Yoshiofthewire/CrunchyXBMC-Legacy
 
 Forum Posting: http://forum.xbmc.org/showthread.php?tid=129709
 
