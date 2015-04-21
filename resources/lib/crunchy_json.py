@@ -695,11 +695,6 @@ def list_media_items(args, request, series_name, season, mode, fanart):
         # Set the name for upcoming episode
         name = soon if media['available'] is False else name
 
-        # There is a bug which prevents Season 0 from displaying correctly
-        # in PMC. This is to help fix that. Will break if a series has
-        # both season 0 and 1.
-        #season = '1' if season == '0' else season
-
         # Not all shows have thumbnails
         thumb = ("http://static.ak.crunchyroll.com/i/no_image_beta_full.jpg"
                      if media['screenshot_image'] is None
@@ -905,7 +900,8 @@ def queue(args):
                                  queued=True)
 
                     log("CR: Queue: series = '%s' queued"
-                        % series['name'.encode('utf8')], xbmc.LOGDEBUG)
+                        % series['name'].encode('latin-1', 'ignore'), xbmc.LOGDEBUG)
+
                 else:
                     log("CR: Queue: series not queued!", xbmc.LOGDEBUG)
 
@@ -1010,6 +1006,7 @@ def start_playback(args):
         log("CR: start_playback: Connection failed, aborting..")
         return
 
+    '''
     if args._addon.getSetting("playback_resume") == 'true':
         playback_resume = True
     else:
@@ -1019,7 +1016,10 @@ def start_playback(args):
         resumetime = "0"
     else:
         resumetime = str(request['data']['playhead'])
+    '''
 
+    resumetime = str(request['data']['playhead'])
+    
     if int(resumetime) > 0:
         playcount = 0
     else:
@@ -1068,8 +1068,16 @@ def start_playback(args):
 
             playlist_position = playlist.getposition()
 
-            if int(resumetime) <= 60:
+            if int(resumetime) <= 90:
                 playback_resume = False
+            else:
+                resmin = int(resumetime) / 60
+                ressec = int(resumetime) % 60
+                dialog = xbmcgui.Dialog()
+                if dialog.yesno("message", "Do you want to Reume Playback at "+str(int(resmin))+":"+str(ressec)+"?"):
+                    playback_resume = True
+                else:
+                    playback_resume = False
 
             try:
                 if playback_resume is True:
