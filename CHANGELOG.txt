@@ -1,3 +1,6 @@
+[B]2.1.2[/B]
+Corrected a Logging issue that would crash the plugin on non-ascii.
+Changed the resume logic to ask on playback.
 [B]2.1.1[/B]
 Thanks to Reinis Danne for the code cleanup
 Name change (again)

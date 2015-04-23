@@ -1006,18 +1006,6 @@ def start_playback(args):
         log("CR: start_playback: Connection failed, aborting..")
         return
 
-    '''
-    if args._addon.getSetting("playback_resume") == 'true':
-        playback_resume = True
-    else:
-        playback_resume = False
-
-    if playback_resume is not True:
-        resumetime = "0"
-    else:
-        resumetime = str(request['data']['playhead'])
-    '''
-
     resumetime = str(request['data']['playhead'])
     
     if int(resumetime) > 0:
@@ -1071,17 +1059,20 @@ def start_playback(args):
             if int(resumetime) <= 90:
                 playback_resume = False
             else:
+                playback_resume = True
+                xbmc.Player().pause()
                 resmin = int(resumetime) / 60
                 ressec = int(resumetime) % 60
                 dialog = xbmcgui.Dialog()
-                if dialog.yesno("message", "Do you want to Reume Playback at "+str(int(resmin))+":"+str(ressec)+"?"):
+                if dialog.yesno("message", "Do you want to Resume Playback at "+str(int(resmin))+":"+str(ressec).zfill(2)+"?"):
                     playback_resume = True
                 else:
-                    playback_resume = False
+                    resumetime = 0
 
             try:
                 if playback_resume is True:
                     player.seekTime(float(resumetime))
+                    xbmc.Player().pause()
 
                 while playlist_position == playlist.getposition():
                     timeplayed = str(int(player.getTime()))
@@ -1116,7 +1107,7 @@ def pretty(d, indent=1):
                 pretty(value, indent + 1)
             else:
                 if isinstance(value, unicode):
-                    value = value.encode('utf8')
+                    value = value.encode('latin-1', 'ignore')
                 else:
                     value = str(value)
                 log(' ' * 2 * (indent + 1) + value, xbmc.LOGDEBUG)
