@@ -26,15 +26,19 @@ import random
 import shelve
 import socket
 import string
-import urllib
-import httplib
-import urllib2
 import datetime
 import StringIO
 import cookielib
 
+import ssl
+import urllib
+import urllib2
+import httplib
+import urllib2_ssl
+
 import xbmc
 import xbmcgui
+import xbmcaddon
 import xbmcplugin
 
 import dateutil.tz
@@ -98,16 +102,16 @@ def load_shelf(args):
             log("CR: New device_id created. New device ID: "
                 + str(device_id))
 
-        user_data['API_HEADERS'] = [('User-Agent',      "Mozilla/5.0 (PLAYSTATION 3; 4.46)"),
+        user_data['API_HEADERS'] = [('User-Agent',      "Mozilla/5.0 (iPhone; iPhone OS 8.3.0; en_US)"),
                                     ('Host',            "api.crunchyroll.com"),
                                     ('Accept-Encoding', "gzip, deflate"),
                                     ('Accept',          "*/*"),
                                     ('Content-Type',    "application/x-www-form-urlencoded")]
 
         user_data['API_URL']          = "https://api.crunchyroll.com"
-        user_data['API_VERSION']      = "1.0.1"
-        user_data['API_ACCESS_TOKEN'] = "S7zg3vKx6tRZ0Sf"
-        user_data['API_DEVICE_TYPE']  = "com.crunchyroll.ps3"
+        user_data['API_VERSION']      = "2313.8"
+        user_data['API_ACCESS_TOKEN'] = "QWjz212GspMHH9h"
+        user_data['API_DEVICE_TYPE']  = "com.crunchyroll.iphone"
 
         user_data.setdefault('premium_type', 'UNKNOWN')
         user_data.setdefault('lastreported', (current_datetime -
@@ -1120,6 +1124,10 @@ def makeAPIRequest(args, method, options):
     if args.user_data['premium_type'] in 'anime|drama|manga|UNKNOWN':
         log("CR: makeAPIRequest: get JSON")
 
+        path = args._addon.getAddonInfo('path')
+        path = os.path.join(path, 'cacert.pem')
+        # TODO: Update cert master file on EVERY UPDATE!
+        
         values = {'version': args.user_data['API_VERSION'],
                   'locale':  args.user_data['API_LOCALE']}
 
@@ -1129,7 +1137,7 @@ def makeAPIRequest(args, method, options):
         values.update(options)
         options = urllib.urlencode(values)
 
-        opener = urllib2.build_opener()
+        opener = urllib2.build_opener(urllib2_ssl.HTTPSHandler(ca_certs=path))
         opener.addheaders = args.user_data['API_HEADERS']
         urllib2.install_opener(opener)
 
