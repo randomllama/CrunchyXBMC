@@ -170,3 +170,7 @@ msgstr ""
 msgctxt "#30312"
 msgid "You MUST be a Premium Member to use this plugin."
 msgstr ""
+
+msgctxt "#30401"
+msgid "[Played]"
+msgstr ""
