@@ -174,3 +174,7 @@ msgstr ""
 msgctxt "#30401"
 msgid "[Played]"
 msgstr ""
+
+msgctxt "#30313"
+msgid "Italian (Italian)"
+msgstr ""

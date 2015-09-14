@@ -66,10 +66,14 @@ def load_shelf(args):
     shelf_path = os.path.join(base_path, "cruchyXBMC")
 
     current_datetime = datetime.datetime.now(dateutil.tz.tzutc())
+	
+    if not os.path.exists(base_path):
+         os.makedirs(base_path)
+	
+    user_data = shelve.open(shelf_path, writeback=True)
 
     try:
         # Load persistent vars
-        user_data = shelve.open(shelf_path, writeback=True)
 
         if change_language == "0":
             user_data.setdefault('API_LOCALE',"enUS")
@@ -91,6 +95,8 @@ def load_shelf(args):
             user_data['API_LOCALE']  = "esLA"
         elif change_language == "9":
             user_data['API_LOCALE']  = "esES"
+        elif change_language == "10":
+            user_data['API_LOCALE']  = "itIT"
 
         user_data['username'] = args._addon.getSetting("crunchy_username")
         user_data['password'] = args._addon.getSetting("crunchy_password")
@@ -121,12 +127,14 @@ def load_shelf(args):
     except:
         log("CR: Unexpected error: %s" % (sys.exc_info(),), xbmc.LOGERROR)
 
+        '''
         # Get process ownership info
         log("CR: Effective User:   %d" % (os.geteuid(),), xbmc.LOGERROR)
         log("CR: Effective Group:  %d" % (os.getegid(),), xbmc.LOGERROR)
         log("CR: User:             %d" % (os.getuid(),), xbmc.LOGERROR)
         log("CR: Group:            %d" % (os.getgid(),), xbmc.LOGERROR)
         log("CR: Groups: %s" % str(os.getgroups()), xbmc.LOGERROR)
+        '''
 
         # Reset user_data
         user_data['session_id']      = ''
