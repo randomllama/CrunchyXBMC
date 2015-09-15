@@ -15,10 +15,14 @@ You should have received a copy of the GNU General Public License along with
 this program; if not, write to the Free Software Foundation,
 Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
-
+import os
 import re
 import sys
 import urllib
+try:
+    import cPickle as pickle
+except:
+    import pickle
 
 import xbmc
 import xbmcgui
@@ -345,7 +349,7 @@ def main():
     """
     args = parse_args()
 
-    if crj.load_shelf(args) is False:
+    if crj.load_pickle(args) is False:
         add_item(args,
                 {'title': 'Session failed: Check login'})
         endofdirectory()
@@ -355,5 +359,10 @@ def main():
 
         check_mode(args)
 
-    # Close shelf
-    args.user_data.close()
+    try:
+        base_path = xbmc.translatePath(args._addon.getAddonInfo('profile')).decode('utf-8')
+        pickle_path = os.path.join(base_path, "cruchyPickle")
+        user_data = pickle.dump(args.user_data, open(pickle_path, 'wb'))
+
+    except:
+        log("CR: Unable to dump pickle")

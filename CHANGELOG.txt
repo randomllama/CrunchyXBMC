@@ -1,3 +1,7 @@
+[B]2.2[/B]
+Replaced Shelf with Pickle (randomllama)
+"fix" the stupid Android bug
+Fix: v. Work around in a stupid way that just won't crash when it fails.
 [B]2.1.3[/B]
 Add display of how much videos had been watched. (Eduardo Martinez)
 Added Italian to language you and select.

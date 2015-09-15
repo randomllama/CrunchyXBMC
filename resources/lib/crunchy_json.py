@@ -23,12 +23,15 @@ import json
 import gzip
 import time
 import random
-import shelve
 import socket
 import string
 import datetime
 import StringIO
 import cookielib
+try:
+    import cPickle as pickle
+except:
+    import pickle
 
 import ssl
 import urllib
@@ -53,7 +56,7 @@ __XBMCBUILD__ = xbmc.getInfoLabel("System.BuildVersion") + " " + sys.platform
 
 
 
-def load_shelf(args):
+def load_pickle(args):
     """Load persistent user data and start Crunchyroll session.
 
     """
@@ -63,14 +66,21 @@ def load_shelf(args):
 
     base_path = xbmc.translatePath(args._addon.getAddonInfo('profile')).decode('utf-8')
 
-    shelf_path = os.path.join(base_path, "cruchyXBMC")
+    pickle_path = os.path.join(base_path, "cruchyPickle")
 
     current_datetime = datetime.datetime.now(dateutil.tz.tzutc())
 	
     if not os.path.exists(base_path):
          os.makedirs(base_path)
 	
-    user_data = shelve.open(shelf_path, writeback=True)
+    try:
+        # Load persistent vars
+        user_data = pickle.load(open(pickle_path))
+
+    except:
+        log("CR: Unable to load pickle")
+        
+        user_data = {}
 
     try:
         # Load persistent vars
@@ -149,7 +159,7 @@ def load_shelf(args):
 
         args.user_data = user_data
 
-        log("CR: Unable to load shelve")
+        log("CR: Unable to load pickle")
 
         return False
 
