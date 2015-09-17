@@ -113,7 +113,7 @@ def load_pickle(args):
 
         if 'device_id' not in user_data:
             char_set  = string.ascii_letters + string.digits
-            device_id = ''.join(random.sample(char_set, 32))
+            device_id = 'FFFF'+''.join(random.sample(char_set, 4))+'-KODI-'+''.join(random.sample(char_set, 4))+'-'+''.join(random.sample(char_set, 4))+'-'+''.join(random.sample(char_set, 12))
             user_data["device_id"] = device_id
             log("CR: New device_id created. New device ID: "
                 + str(device_id))
