@@ -178,3 +178,23 @@ msgstr ""
 msgctxt "#30313"
 msgid "Italian (Italian)"
 msgstr ""
+
+msgctxt "#30501"
+msgid "Dequeue Series"
+msgstr ""
+
+msgctxt "#30502"
+msgid "Enqueue Series"
+msgstr ""
+
+msgctxt "#30503"
+msgid "Goto Series"
+msgstr ""
+
+msgctxt "#30504"
+msgid "Queue Video"
+msgstr ""
+
+msgctxt "#30505"
+msgid "Add-on settings"
+msgstr ""

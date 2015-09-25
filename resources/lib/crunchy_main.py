@@ -159,32 +159,34 @@ def add_item(args,
     # Add context menu
     s1  = re.sub(rex, 'add_to_queue',      u)
     s2  = re.sub(rex, 'remove_from_queue', u)
+    #s3  = re.sub(rex, 'list_media', u)
 
-    cm = [('Add-on settings', 'XBMC.Addon.OpenSettings(%s)' % args._id)]
+    cm = [(args._lang(30505), 'XBMC.Addon.OpenSettings(%s)' % args._id)]
 
     if (args.mode is not None and
         args.mode not in 'channels|list_categories'):
 
-        cm.insert(0, ('Queue Video', 'XBMC.Action(Queue)'))
+        cm.insert(0, (args._lang(30504), 'XBMC.Action(Queue)'))
 
     if not isFolder:
         # Let XBMC know this can be played, unlike a folder
         li.setProperty('IsPlayable', 'true')
 
         if queued:
-            cm.insert(1, ('Dequeue Series', 'XBMC.RunPlugin(%s)' % s2))
+            cm.insert(1, (args._lang(30501), 'XBMC.RunPlugin(%s)' % s2))
         else:
-            cm.insert(1, ('Enqueue Series', 'XBMC.RunPlugin(%s)' % s1))
+            cm.insert(1, (args._lang(30502), 'XBMC.RunPlugin(%s)' % s1))
 
     else:
         if (args.mode is not None and
             args.mode in 'list_coll|list_series|queue'):
 
             if queued:
-                cm.insert(1, ('Dequeue Series', 'XBMC.RunPlugin(%s)' % s2))
+                cm.insert(1, (args._lang(30501), 'XBMC.RunPlugin(%s)' % s2))
             else:
-                cm.insert(1, ('Enqueue Series', 'XBMC.RunPlugin(%s)' % s1))
+                cm.insert(1, (args._lang(30502), 'XBMC.RunPlugin(%s)' % s1))
 
+    #cm.insert(2, (args._lang(30503), 'XBMC.RunPlugin(%s)' % s3))
     cm.append(('Toggle debug', 'XBMC.ToggleDebug'))
 
     li.addContextMenuItems(cm, replaceItems=True)

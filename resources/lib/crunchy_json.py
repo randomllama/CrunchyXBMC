@@ -638,9 +638,12 @@ def list_media_items(args, request, series_name, season, mode, fanart):
 
     """
     for media in request:
-        queued = ((media['series']['series_id']
+	
+        series_id = (media['series']['series_id']
                        if mode == "history"
-                       else args.series_id) in args.user_data['queue'])
+                       else args.series_id)
+
+        queued = (series_id in args.user_data['queue'])
 
         # The following are items to help display Recently Watched
         # and Queue items correctly
@@ -763,7 +766,8 @@ def list_media_items(args, request, series_name, season, mode, fanart):
                      {'title':        name.encode("utf8") + visto,
                       'mode':         'videoplay',
                       'id':           media_id.encode("utf8"),
-					  'episode':      str(media['episode_number']).encode("utf8"),
+                      'series_id':    series_id,
+                      'episode':      str(media['episode_number']).encode("utf8"),
                       'thumb':        thumb.encode("utf8"),
                       'url':          url.encode("utf8"),
                       'fanart_image': fanart,
