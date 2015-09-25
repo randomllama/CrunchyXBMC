@@ -74,11 +74,13 @@ def endofdirectory(sortMethod='none'):
     """
     # Set sortmethod to something xbmc can use
     if sortMethod == 'title':
-        sortMethod = xbmcplugin.SORT_METHOD_LABEL
+        sortMethod = xbmcplugin.SORT_METHOD_TITLE
     elif sortMethod == 'none':
         sortMethod = xbmcplugin.SORT_METHOD_NONE
     elif sortMethod == 'date':
         sortMethod = xbmcplugin.SORT_METHOD_DATE
+    elif sortMethod == 'label':
+        sortMethod = xbmcplugin.SORT_METHOD_LABEL_IGNORE_THE
 
     # Sort methods are required in library mode
     xbmcplugin.addSortMethod(int(sys.argv[1]),
@@ -120,6 +122,7 @@ def add_item(args,
     info.setdefault('year',         '0')
     info.setdefault('playhead',     '0')
     info.setdefault('duration',     '0')
+    info.setdefault('episode',      '0')
     info.setdefault('plot',         'None')
 
     # Create params for xbmcplugin module
@@ -140,15 +143,17 @@ def add_item(args,
         '&year='       + urllib.quote_plus(info['year'])         +\
         '&playhead='   + urllib.quote_plus(info['playhead'])     +\
         '&duration='   + urllib.quote_plus(info['duration'])     +\
+        '&episode='   + urllib.quote_plus(info['episode'])     +\
         '&plot='       + urllib.quote_plus(info['plot']          +'%20')
 
     # Create list item
     li = xbmcgui.ListItem(label          = info['title'],
                           thumbnailImage = info['thumb'])
     li.setInfo(type       = "Video",
-               infoLabels = {"Title": info['title'],
-                             "Plot":  info['plot'],
-                             "Year":  info['year']})
+               infoLabels = {"Title":   info['title'],
+                             "Plot":    info['plot'],
+                             "Year":    info['year'],
+							 "episode": info['episode']})
     li.setProperty("Fanart_Image", info['fanart_image'])
 
     # Add context menu

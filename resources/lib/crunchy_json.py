@@ -525,7 +525,7 @@ def list_series(args):
                           'filterx':    args.filterx,
                           'offset':     offset})
 
-    crm.endofdirectory('none')
+    crm.endofdirectory('label')
 
 
 def list_categories(args):
@@ -545,7 +545,7 @@ def list_categories(args):
                           'filterx':    'tag:' + i['tag']},
                          isFolder=True)
 
-    crm.endofdirectory('none')
+    crm.endofdirectory('label')
 
 
 def list_collections(args):
@@ -592,7 +592,7 @@ def list_collections(args):
                              isFolder=True,
                              queued=queued)
 
-    crm.endofdirectory('none')
+    crm.endofdirectory('title')
 
 
 def list_media(args):
@@ -763,6 +763,7 @@ def list_media_items(args, request, series_name, season, mode, fanart):
                      {'title':        name.encode("utf8") + visto,
                       'mode':         'videoplay',
                       'id':           media_id.encode("utf8"),
+					  'episode':      str(media['episode_number']).encode("utf8"),
                       'thumb':        thumb.encode("utf8"),
                       'url':          url.encode("utf8"),
                       'fanart_image': fanart,
@@ -773,7 +774,7 @@ def list_media_items(args, request, series_name, season, mode, fanart):
                      isFolder=False,
                      queued=queued)
 
-    crm.endofdirectory('none')
+    crm.endofdirectory('title')
 
 
 def history(args):
@@ -933,7 +934,7 @@ def queue(args):
                 else:
                     log("CR: Queue: series not queued!", xbmc.LOGDEBUG)
 
-            crm.endofdirectory('none')
+            crm.endofdirectory('label')
 
 
 def get_queued(args):
