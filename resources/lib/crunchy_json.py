@@ -938,7 +938,7 @@ def queue(args):
                 else:
                     log("CR: Queue: series not queued!", xbmc.LOGDEBUG)
 
-            crm.endofdirectory('label')
+            crm.endofdirectory('none')
 
 
 def get_queued(args):
