@@ -756,14 +756,9 @@ def list_media_items(args, request, series_name, season, mode, fanart):
         url = media['url']
         media_id = url.split('-')[-1]
 
-        visto = " "
-        if int(float(playhead)) > 10 :
-            played   = args._lang(30401)
-            porcentaje = (( int(float(playhead)) * 100 ) / int(float(duration)))+1
-            visto = "[COLOR FFbc3bfd] " + played + " [/COLOR] [COLOR FF6fe335]" + str(porcentaje) + "%[/COLOR]"
-            
+
         crm.add_item(args,
-                     {'title':        name.encode("utf8") + visto,
+                     {'title':        name.encode("utf8"),
                       'mode':         'videoplay',
                       'id':           media_id.encode("utf8"),
                       'series_id':    series_id,
