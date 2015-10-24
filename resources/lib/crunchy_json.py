@@ -359,22 +359,22 @@ def _test_session(args,
 
     # Test to make sure the session still works
     # (sometimes sessions just stop working)
-    fields  = "".join(["media.episode_number,",
-                       "media.name,",
-                       "media.description,",
-                       "media.media_type,",
-                       "media.series_name,",
-                       "media.available,",
-                       "media.available_time,",
-                       "media.free_available,",
-                       "media.free_available_time,",
-                       "media.duration,",
-                       "media.url,",
-                       "media.screenshot_image,",
-                       "image.fwide_url,",
-                       "image.fwidestar_url,",
-                       "series.landscape_image,",
-                       "image.full_url"])
+    fields  = ",".join(["media.episode_number",
+                        "media.name",
+                        "media.description",
+                        "media.media_type",
+                        "media.series_name",
+                        "media.available",
+                        "media.available_time",
+                        "media.free_available",
+                        "media.free_available_time",
+                        "media.duration",
+                        "media.url",
+                        "media.screenshot_image",
+                        "image.fwide_url",
+                        "image.fwidestar_url",
+                        "series.landscape_image",
+                        "image.full_url"])
     options = {'media_types': "anime|drama",
                'fields':      fields}
 
@@ -446,18 +446,18 @@ def list_series(args):
     """List series.
 
     """
-    fields  = "".join(["series.name,",
-                       "series.description,",
-                       "series.series_id,",
-                       "series.rating,",
-                       "series.media_count,",
-                       "series.url,",
-                       "series.publisher_name,",
-                       "series.year,",
-                       "series.portrait_image,",
-                       "image.large_url,",
-                       "series.landscape_image,",
-                       "image.full_url"])
+    fields  = ",".join(["series.name",
+                        "series.description",
+                        "series.series_id",
+                        "series.rating",
+                        "series.media_count",
+                        "series.url",
+                        "series.publisher_name",
+                        "series.year",
+                        "series.portrait_image",
+                        "image.large_url",
+                        "series.landscape_image",
+                        "image.full_url"])
     options = {'media_type': args.media_type,
                'filter':     args.filterx,
                'fields':     fields,
@@ -552,12 +552,12 @@ def list_collections(args):
     """List collections.
 
     """
-    fields  = "".join(["collection.collection_id,",
-                       "collection.season,",
-                       "collection.name,",
-                       "collection.description,",
-                       "collection.complete,",
-                       "collection.media_count"])
+    fields  = ",".join(["collection.collection_id",
+                        "collection.season",
+                        "collection.name",
+                        "collection.description",
+                        "collection.complete",
+                        "collection.media_count"])
     options = {'series_id': args.series_id,
                'fields':    fields,
                'sort':      'desc',
@@ -600,23 +600,23 @@ def list_media(args):
 
     """
     sort    = 'asc' if args.complete is '1' else 'desc'
-    fields  = "".join(["media.episode_number,",
-                       "media.name,",
-                       "media.description,",
-                       "media.media_type,",
-                       "media.series_name,",
-                       "media.available,",
-                       "media.available_time,",
-                       "media.free_available,",
-                       "media.free_available_time,",
-                       "media.playhead,",
-                       "media.duration,",
-                       "media.url,",
-                       "media.screenshot_image,",
-                       "image.fwide_url,",
-                       "image.fwidestar_url,",
-                       "series.landscape_image,",
-                       "image.full_url"])
+    fields  = ",".join(["media.episode_number",
+                        "media.name",
+                        "media.description",
+                        "media.media_type",
+                        "media.series_name",
+                        "media.available",
+                        "media.available_time",
+                        "media.free_available",
+                        "media.free_available_time",
+                        "media.playhead",
+                        "media.duration",
+                        "media.url",
+                        "media.screenshot_image",
+                        "image.fwide_url",
+                        "image.fwidestar_url",
+                        "series.landscape_image",
+                        "image.full_url"])
     options = {'collection_id': args.id,
                'fields':        fields,
                'sort':          sort,
@@ -785,21 +785,21 @@ def history(args):
     """Show history.
 
     """
-    fields  = "".join(["media.episode_number,",
-                       "media.name,",
-                       "media.description,",
-                       "media.media_type,",
-                       "media.series_name,",
-                       "media.available,",
-                       "media.available_time,",
-                       "media.free_available,",
-                       "media.free_available_time,",
-                       "media.duration,",
-                       "media.playhead,",
-                       "media.url,",
-                       "media.screenshot_image,",
-                       "image.fwide_url,",
-                       "image.fwidestar_url"])
+    fields  = ",".join(["media.episode_number",
+                        "media.name",
+                        "media.description",
+                        "media.media_type",
+                        "media.series_name",
+                        "media.available",
+                        "media.available_time",
+                        "media.free_available",
+                        "media.free_available_time",
+                        "media.duration",
+                        "media.playhead",
+                        "media.url",
+                        "media.screenshot_image",
+                        "image.fwide_url",
+                        "image.fwidestar_url"])
     options = {'media_types': "anime|drama",
                'fields':      fields,
                'limit':       '256'}
@@ -823,24 +823,24 @@ def queue(args):
 
     log("CR: Queue: queue type is " + str(queue_type))
     if queue_type == '0':
-        fields  = "".join(["media.episode_number,",
-                           "media.name,",
-                           "media.description,",
-                           "media.media_type,",
-                           "media.series_name,",
-                           "media.available,",
-                           "media.available_time,",
-                           "media.free_available,",
-                           "media.free_available_time,",
-                           "media.duration,",
-                           "media.playhead,",
-                           "media.url,",
-                           "media.screenshot_image,",
-                           "image.fwide_url,",
-                           "image.fwidestar_url,",
-                           "series.landscape_image,",
-                           "series.series_id,",
-                           "image.full_url"])
+        fields  = ",".join(["media.episode_number",
+                            "media.name",
+                            "media.description",
+                            "media.media_type",
+                            "media.series_name",
+                            "media.available",
+                            "media.available_time",
+                            "media.free_available",
+                            "media.free_available_time",
+                            "media.duration",
+                            "media.playhead",
+                            "media.url",
+                            "media.screenshot_image",
+                            "image.fwide_url",
+                            "image.fwidestar_url",
+                            "series.landscape_image",
+                            "series.series_id",
+                            "image.full_url"])
         options = {'media_types': "anime|drama",
                    'fields':      fields}
 
@@ -862,18 +862,18 @@ def queue(args):
                                     'fanart')
 
     elif queue_type == '1':
-        fields  = "".join(["series.name,",
-                           "series.description,",
-                           "series.series_id,",
-                           "series.rating,",
-                           "series.media_count,",
-                           "series.url,",
-                           "series.publisher_name,",
-                           "series.year,",
-                           "series.portrait_image,",
-                           "image.large_url,",
-                           "series.landscape_image,",
-                           "image.full_url"])
+        fields  = ",".join(["series.name",
+                            "series.description",
+                            "series.series_id",
+                            "series.rating",
+                            "series.media_count",
+                            "series.url",
+                            "series.publisher_name",
+                            "series.year",
+                            "series.portrait_image",
+                            "image.large_url",
+                            "series.landscape_image",
+                            "image.full_url"])
         options = {'media_types': "anime|drama",
                    'fields':      fields}
 
@@ -1023,12 +1023,12 @@ def start_playback(args):
     res_quality = ['low', 'mid', 'high', 'ultra']
     quality     = res_quality[int(args._addon.getSetting("video_quality"))]
 
-    fields = "".join(["media.episode_number,",
-                      "media.name,",
-                      "media.playhead,",
-                      "media.description,",
-                      "media.url,",
-                      "media.stream_data"])
+    fields = ",".join(["media.episode_number",
+                       "media.name",
+                       "media.playhead",
+                       "media.description",
+                       "media.url",
+                       "media.stream_data"])
 
     values = {'media_id': args.id,
               'fields':   fields}
