@@ -66,20 +66,20 @@ def load_pickle(args):
 
     base_path = xbmc.translatePath(args._addon.getAddonInfo('profile')).decode('utf-8')
 
-    pickle_path = os.path.join(base_path, "cruchyPickle")
+    pickle_path = os.path.join(base_path, "crunchyXBMC")
 
     current_datetime = datetime.datetime.now(dateutil.tz.tzutc())
-	
+
     if not os.path.exists(base_path):
          os.makedirs(base_path)
-	
+
     try:
         # Load persistent vars
         user_data = pickle.load(open(pickle_path))
 
     except:
         log("CR: Unable to load pickle")
-        
+
         user_data = {}
 
     try:

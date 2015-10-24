@@ -368,7 +368,7 @@ def main():
 
     try:
         base_path = xbmc.translatePath(args._addon.getAddonInfo('profile')).decode('utf-8')
-        pickle_path = os.path.join(base_path, "cruchyPickle")
+        pickle_path = os.path.join(base_path, "crunchyXBMC")
         user_data = pickle.dump(args.user_data, open(pickle_path, 'wb'))
 
     except:
