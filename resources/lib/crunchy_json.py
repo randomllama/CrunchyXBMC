@@ -638,7 +638,7 @@ def list_media_items(args, request, series_name, season, mode, fanart):
 
     """
     for media in request:
-	
+
         series_id = (media['series']['series_id']
                        if mode == "history"
                        else args.series_id)
@@ -1035,7 +1035,7 @@ def start_playback(args):
         return
 
     resumetime = str(request['data']['playhead'])
-    
+
     if int(resumetime) > 0:
         playcount = 0
     else:
@@ -1151,7 +1151,7 @@ def makeAPIRequest(args, method, options):
         path = args._addon.getAddonInfo('path')
         path = os.path.join(path, 'cacert.pem')
         # TODO: Update cert master file on EVERY UPDATE!
-        
+
         values = {'version': args.user_data['API_VERSION'],
                   'locale':  args.user_data['API_LOCALE']}
 
