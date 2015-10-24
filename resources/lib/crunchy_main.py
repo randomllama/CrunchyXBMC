@@ -143,7 +143,7 @@ def add_item(args,
         '&year='       + urllib.quote_plus(info['year'])         +\
         '&playhead='   + urllib.quote_plus(info['playhead'])     +\
         '&duration='   + urllib.quote_plus(info['duration'])     +\
-        '&episode='   + urllib.quote_plus(info['episode'])     +\
+        '&episode='    + urllib.quote_plus(info['episode'])      +\
         '&plot='       + urllib.quote_plus(info['plot']          +'%20')
 
     # Create list item
@@ -153,7 +153,11 @@ def add_item(args,
                infoLabels = {"Title":   info['title'],
                              "Plot":    info['plot'],
                              "Year":    info['year'],
-							 "episode": info['episode']})
+                             "episode": info['episode'],
+                            "duration": info['duration'],
+                           "playcount": (1
+                                            if int(info['playhead']) > 0
+                                            else 0)})
     li.setProperty("Fanart_Image", info['fanart_image'])
 
     # Add context menu
