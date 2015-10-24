@@ -130,8 +130,6 @@ def load_pickle(args):
         user_data['API_DEVICE_TYPE']  = "com.crunchyroll.iphone"
 
         user_data.setdefault('premium_type', 'UNKNOWN')
-        user_data.setdefault('lastreported', (current_datetime -
-                                              durel.relativedelta(hours = +24)))
         args.user_data = user_data
 
     except:
@@ -149,8 +147,6 @@ def load_pickle(args):
         # Reset user_data
         user_data['session_id']      = ''
         user_data['auth_expires']    = (current_datetime -
-                                        durel.relativedelta(hours = +24))
-        user_data['lastreported']    = (current_datetime -
                                         durel.relativedelta(hours = +24))
         user_data['premium_type']    = 'UNKNOWN'
         user_data['auth_token']      = ''
@@ -411,12 +407,6 @@ def _post_login(args,
 
     """
     acc_type_error = args._lang(30312)
-
-    # Call for usage reporting
-    if current_datetime > args.user_data['lastreported']:
-        args.user_data['lastreported'] = (current_datetime +
-                                          durel.relativedelta(hours = +24))
-        usage_reporting(args)
 
     # Verify user is premium
     if args.user_data['premium_type'] in 'anime|drama|manga':
@@ -1280,35 +1270,6 @@ def change_locale(args):
     log("CR: Disabling the force change language setting")
 
     args._addon.setSetting(id="change_language", value="0")
-
-
-def usage_reporting(args):
-    """Report addon usage to the author.
-
-    Following information is collected:
-    - Randomly generated device ID
-    - Premium type
-    - Addon version
-    - XBMC version
-    """
-    log("CR: Attempting to report usage")
-
-    url  = ''.join(['https://docs.google.com/forms/d',
-                    '/1_qB4UznRfx69JrGCYmKbbeQcFc_t2-9fuNvXGGvl8mk',
-                    '/formResponse'])
-    data = urllib.urlencode({'entry_1580743010': args.user_data['device_id'],
-                             'entry_623948459':  args.user_data['premium_type'],
-                             'entry_1130326797': __version__,
-                             'entry.590894822':  __XBMCBUILD__})
-
-    ua = 'Mozilla/5.0 (X11; Linux i686; rv:5.0) Gecko/20100101 Firefox/5.0'
-
-    opener = urllib2.build_opener()
-    opener.addheaders = [('User-Agent', ua)]
-    urllib2.install_opener(opener)
-
-    req = opener.open(url, data)
-    req.close()
 
 
 def log(msg,
